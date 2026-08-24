@@ -1,43 +1,52 @@
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
-    const [login,setLogin] = useState({
-        email:"",
-        password:"",
+    const navigate = useNavigate();
+    const { login } = useAuth();
+    const [credentials, setCredentials] = useState({
+        email: "",
+        password: "",
     });
     const [errors, setErrors] = useState({});
-    const form =(event) =>{
-        const {name , value} = event.target;
-        setLogin(prevLogin =>({
+    const form = (event) => {
+        const { name, value } = event.target;
+        setCredentials(prevLogin => ({
             ...prevLogin,
-            [name]:value,
-    }) );
-    setErrors(prevErrors =>({
-        ...prevErrors,
-        ['name']:'',
-    }))
+            [name]: value,
+        }));
+        setErrors(prevErrors => ({
+            ...prevErrors,
+            [name]: '',
+        }))
     }
-    const validate = ()=>{
+    const validate = () => {
         const errors = {};
-        if(!login.email){
-            errors.email="email is required"
+        if (!credentials.email) {
+            errors.email = "email is required"
         }
-        if(!login.password){
+        if (!credentials.password) {
             errors.password = "password is required"
-        }else if(login.password.length<6){
+        } else if (credentials.password.length < 6) {
             errors.password = "passwprd should minumn have 6 characters";
         }
         return errors;
     }
-    const submitForm=(event)=>{
+    const submitForm = async (event) => {
         event.preventDefault();
-        
+
         const validationErrors = validate();
         setErrors(validationErrors);
-        if(Object.keys(validationErrors).length > 0 ){
+        if (Object.keys(validationErrors).length > 0) {
             return
         }
-        console.log(login);
+        try {
+            await login(credentials);
+            navigate("/admin/dashboard")
+        } catch (error) {
+            console.log(error);
+        }
     }
     return (
         <div className="min-h-screen flex items-center justify-center">
