@@ -1,42 +1,20 @@
-import { useEffect, useState } from "react";
-import UserCard from './UserCard.jsx'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function Users() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+import Login from "./admin/pages/Login";
+import Dashboard from "./admin/pages/Dashboard";
 
-  useEffect(() => {
-    const getUsers = async () => {
-      try {
-        const response = await fetch("https://jsonplaceholder.typicode.com/users");
-        const data = await response.json();
-        setUsers(data);
+function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
 
-      } catch (error) {
-        setError("unexpected error accured");
-      } finally {
-        setLoading(false);
-      }
+                <Route path="/admin/login" element={<Login />} />
 
-    };
-    getUsers();
-  }, []);
-  if (loading) {
-    return <h2>Loadinggg.........</h2>
-  }
-  if (error) {
-    return <h2>{error}</h2>
-  }
-  return (
-    <div>
-      <h1>Users</h1>
+                <Route path="/admin/dashboard" element={<Dashboard />} />
 
-      {users.map(user => (
-        <UserCard key={user.id} user={user} />
-               ))}
-    </div>
-  );
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
-export default Users;
+export default App;
