@@ -1,54 +1,66 @@
-import { createContext, useContext, useState } from "react";
-import { loginAdmin, logoutAdmin } from "../services/auth";
-import toast from "react-hot-toast";
+import { createContext, useContext, useEffect, useState } from "react";
+import { loginAdmin, getAdmin } from "../services/auth";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
 
     const [admin, setAdmin] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+
+        const token = localStorage.getItem("admin_token");
+
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+
+        const restoreAdmin = async () => {
+            try {
+
+                const data = await getAdmin();
+
+                setAdmin(data.admin);
+
+            } catch (error) {
+
+                localStorage.removeItem("admin_token");
+                setAdmin(null);
+
+            } finally {
+
+                setLoading(false);
+
+            }
+        };
+
+        restoreAdmin();
+
+    }, []);
+
 
     const login = async (credentials) => {
-        try {
-            const data = await loginAdmin(credentials);
 
-            localStorage.setItem("admin_token", data.token);
+        const data = await loginAdmin(credentials);
 
-            setAdmin(data.admin);
+        localStorage.setItem("admin_token", data.token);
 
-            toast.success("Login successful");
+        setAdmin(data.admin);
 
-            return data;
-
-        } catch (error) {
-            toast.error(
-                error?.data?.message || "Unable to login"
-            );
-
-            throw error;
-        }
+        return data;
     };
-    const logout = async () => {
 
-        try {
 
-            await logoutAdmin();
+    const logout = () => {
 
-            localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_token");
 
-            setAdmin(null);
+        setAdmin(null);
 
-            toast.success("Logged out successfully");
-
-        } catch (error) {
-
-            toast.error(
-                error?.data?.message || "Logout failed"
-            );
-
-            throw error;
-        }
     };
+
 
     return (
         <AuthContext.Provider
@@ -56,13 +68,15 @@ export function AuthProvider({ children }) {
                 admin,
                 setAdmin,
                 login,
-                logout
+                logout,
+                loading,
             }}
         >
             {children}
         </AuthContext.Provider>
     );
 }
+
 
 export function useAuth() {
     return useContext(AuthContext);

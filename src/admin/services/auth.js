@@ -20,14 +20,15 @@ export async function loginAdmin(credentials) {
     return data;
 }
 export async function getAdmin() {
+
     const token = localStorage.getItem("admin_token");
 
     const response = await fetch(
         "http://127.0.0.1:8000/api/admin/me",
         {
             headers: {
-                "Accept": "application/json",
-                "Authorization": `Bearer ${token}`,
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`,
             },
         }
     );

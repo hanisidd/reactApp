@@ -110,7 +110,12 @@ function Navbar() {
                         >
                             Users
                         </Link>
-
+                        <Link
+                            to="/admin/admins"
+                            className="text-gray-700 hover:text-blue-600 transition"
+                        >
+                            Admins
+                        </Link>
 
                         {/* Profile */}
                         <div className="relative">
