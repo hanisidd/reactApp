@@ -28,6 +28,7 @@ function Products() {
     const [saving, setSaving] = useState(false);
 
     const [form, setForm] = useState({
+        type: "digital", // Default to digital
         category_id: "",
         title: "",
         description: "",
@@ -53,7 +54,7 @@ function Products() {
         totalPages,
         totalItems,
         paginatedData,
-    } = useDataTable(products, ["title", "price", "status", "file_original_name"], 5);
+    } = useDataTable(products, ["title", "type", "price", "status", "file_original_name"], 5);
 
     useEffect(() => {
         fetchInitialData();
@@ -83,6 +84,7 @@ function Products() {
     const openAddModal = () => {
         setEditingProduct(null);
         setForm({
+            type: "digital",
             category_id: "",
             title: "",
             description: "",
@@ -99,6 +101,7 @@ function Products() {
     const openEditModal = (product) => {
         setEditingProduct(product);
         setForm({
+            type: product.type || "digital",
             category_id: product.category_id,
             title: product.title,
             description: product.description || "",
@@ -217,6 +220,7 @@ function Products() {
         e.preventDefault();
 
         const formData = new FormData();
+        formData.append("type", form.type);
         formData.append("category_id", form.category_id);
         formData.append("title", form.title);
         formData.append("description", form.description);
@@ -224,7 +228,7 @@ function Products() {
         formData.append("quantity", form.quantity);
         formData.append("status", form.status);
 
-        if (digitalFile) {
+        if (form.type === "digital" && digitalFile) {
             formData.append("digital_file", digitalFile);
         }
 
@@ -313,7 +317,7 @@ function Products() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Products</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage digital downloads, images, and inventory</p>
+                    <p className="text-sm text-gray-500 mt-1">Manage physical & digital inventory, images, and files</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <input
@@ -344,6 +348,12 @@ function Products() {
                             >
                                 Title {sortConfig.key === "title" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                             </th>
+                            <th
+                                onClick={() => handleSort("type")}
+                                className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                            >
+                                Type {sortConfig.key === "type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
+                            </th>
                             <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
                             <th
                                 onClick={() => handleSort("price")}
@@ -364,7 +374,7 @@ function Products() {
                     <tbody className="divide-y divide-gray-200 text-sm">
                         {paginatedData.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="text-center py-6 text-gray-500">
+                                <td colSpan="8" className="text-center py-6 text-gray-500">
                                     No matching products found.
                                 </td>
                             </tr>
@@ -395,9 +405,20 @@ function Products() {
                                                 {product.title}
                                             </button>
                                         </td>
+                                        <td className="px-6 py-4">
+                                            <span
+                                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${
+                                                    product.type === "digital"
+                                                        ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                                        : "bg-blue-50 text-blue-700 border border-blue-200"
+                                                }`}
+                                            >
+                                                {product.type || "digital"}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4 text-gray-600">{product.category?.name || "N/A"}</td>
                                         <td className="px-6 py-4 font-medium text-gray-900">
-                                            {parseFloat(product.price).toFixed(2)}
+                                            ${parseFloat(product.price).toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <button
@@ -412,7 +433,9 @@ function Products() {
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-gray-600 text-xs">
-                                            {product.file_original_name ? (
+                                            {product.type === "physical" ? (
+                                                <span className="text-gray-400 font-medium">N/A (Physical)</span>
+                                            ) : product.file_original_name ? (
                                                 <div>
                                                     <span className="font-semibold text-gray-800 block truncate max-w-[180px]">
                                                         {product.file_original_name}
@@ -466,9 +489,20 @@ function Products() {
                     <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl p-6 max-h-[85vh] overflow-y-auto">
                         <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-5">
                             <div>
-                                <span className="text-xs font-semibold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                                    {viewingProduct.category?.name || "Uncategorized"}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                                        {viewingProduct.category?.name || "Uncategorized"}
+                                    </span>
+                                    <span
+                                        className={`text-xs font-semibold uppercase px-2 py-0.5 rounded ${
+                                            viewingProduct.type === "digital"
+                                                ? "bg-purple-100 text-purple-800"
+                                                : "bg-blue-100 text-blue-800"
+                                        }`}
+                                    >
+                                        {viewingProduct.type || "digital"}
+                                    </span>
+                                </div>
                                 <h2 className="text-xl font-bold text-gray-900 mt-1">{viewingProduct.title}</h2>
                             </div>
                             <button
@@ -481,7 +515,7 @@ function Products() {
                         <div className="grid grid-cols-3 gap-4 mb-5">
                             <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                                 <p className="text-xs text-gray-500 font-medium">Price</p>
-                                <p className="text-lg font-bold text-gray-900">{parseFloat(viewingProduct.price).toFixed(2)}</p>
+                                <p className="text-lg font-bold text-gray-900">${parseFloat(viewingProduct.price).toFixed(2)}</p>
                             </div>
                             <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                                 <p className="text-xs text-gray-500 font-medium">Available Stock</p>
@@ -500,30 +534,35 @@ function Products() {
                                 </span>
                             </div>
                         </div>
-                        <div className="bg-blue-50/60 border border-blue-100 p-4 rounded-lg mb-5 flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-semibold text-blue-900">Digital Product Attachment</p>
-                                {viewingProduct.file_original_name ? (
-                                    <p className="text-sm font-medium text-gray-800 mt-0.5">
-                                        {viewingProduct.file_original_name}{" "}
-                                        <span className="text-xs text-gray-500">({viewingProduct.formatted_file_size})</span>
-                                    </p>
-                                ) : (
-                                    <p className="text-xs text-red-500 mt-0.5">No file attached</p>
+
+                        {/* Digital Product Download Box - Only if Digital */}
+                        {viewingProduct.type === "digital" && (
+                            <div className="bg-blue-50/60 border border-blue-100 p-4 rounded-lg mb-5 flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold text-blue-900">Digital Product Attachment</p>
+                                    {viewingProduct.file_original_name ? (
+                                        <p className="text-sm font-medium text-gray-800 mt-0.5">
+                                            {viewingProduct.file_original_name}{" "}
+                                            <span className="text-xs text-gray-500">({viewingProduct.formatted_file_size})</span>
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-red-500 mt-0.5">No file attached</p>
+                                    )}
+                                </div>
+                                {viewingProduct.file_url && (
+                                    <a
+                                        href={viewingProduct.file_url}
+                                        download
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition shadow-sm"
+                                    >
+                                        Download File
+                                    </a>
                                 )}
                             </div>
-                            {viewingProduct.file_url && (
-                                <a
-                                    href={viewingProduct.file_url}
-                                    download
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition shadow-sm"
-                                >
-                                    Download File
-                                </a>
-                            )}
-                        </div>
+                        )}
+
                         <div className="mb-6">
                             <h3 className="text-sm font-semibold text-gray-800 mb-2">Description</h3>
                             <div
@@ -579,24 +618,70 @@ function Products() {
                             </button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="bg-blue-50/50 p-4 border border-blue-100 rounded-lg">
-                                <label className="block text-sm font-semibold text-gray-800 mb-1">Digital Product File</label>
-                                {editingProduct && editingProduct.file_original_name && (
-                                    <p className="text-xs text-gray-600 mb-2">
-                                        Current file: <span className="font-semibold text-blue-700">{editingProduct.file_original_name}</span> ({editingProduct.formatted_file_size})
-                                    </p>
-                                )}
-                                <input
-                                    type="file"
-                                    accept=".zip,.pdf,.txt,.epub,.doc,.docx,.rar"
-                                    onChange={handleDigitalFileChange}
-                                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
-                                />
-                                <span className="text-xs text-gray-500 block mt-1">
-                                    Allowed formats: .zip, .pdf, .txt, .epub, .doc, .docx, .rar | Max size: 50MB
-                                </span>
-                                {errors.digital_file && <p className="text-red-500 text-xs mt-1">{errors.digital_file[0] || errors.digital_file}</p>}
+                            {/* Product Type Switcher */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                                    Product Type
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm((prev) => ({ ...prev, type: "digital" }))}
+                                        className={`p-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition ${
+                                            form.type === "digital"
+                                                ? "bg-purple-50 border-purple-600 text-purple-700 ring-2 ring-purple-100 font-semibold"
+                                                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <span>💾 Digital Product</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm((prev) => ({ ...prev, type: "physical" }))}
+                                        className={`p-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition ${
+                                            form.type === "physical"
+                                                ? "bg-blue-50 border-blue-600 text-blue-700 ring-2 ring-blue-100 font-semibold"
+                                                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        <span>📦 Physical Product</span>
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* Digital File Selection - Only when Type is Digital */}
+                            {form.type === "digital" && (
+                                <div className="bg-purple-50/50 p-4 border border-purple-100 rounded-lg">
+                                    <label className="block text-sm font-semibold text-gray-800 mb-1">
+                                        Digital Product File
+                                    </label>
+
+                                    {editingProduct && editingProduct.file_original_name && (
+                                        <p className="text-xs text-gray-600 mb-2">
+                                            Current file: <span className="font-semibold text-purple-700">{editingProduct.file_original_name}</span> ({editingProduct.formatted_file_size})
+                                        </p>
+                                    )}
+
+                                    <input
+                                        type="file"
+                                        accept=".zip,.pdf,.txt,.epub,.doc,.docx,.rar"
+                                        onChange={handleDigitalFileChange}
+                                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
+                                    />
+
+                                    <span className="text-xs text-gray-500 block mt-1">
+                                        Allowed formats: .zip, .pdf, .txt, .epub, .doc, .docx, .rar | Max size: 50MB
+                                    </span>
+
+                                    {errors.digital_file && (
+                                        <p className="text-red-500 text-xs mt-1">
+                                            {errors.digital_file[0] || errors.digital_file}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Category Select */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                                 <Select
@@ -612,6 +697,8 @@ function Products() {
                                 />
                                 {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id[0] || errors.category_id}</p>}
                             </div>
+
+                            {/* Title */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Title</label>
                                 <input
@@ -619,10 +706,12 @@ function Products() {
                                     value={form.title}
                                     onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                    placeholder="e.g. Master React & Laravel E-Book"
+                                    placeholder="e.g. Wireless Headphones or Master React E-Book"
                                 />
                                 {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title[0] || errors.title}</p>}
                             </div>
+
+                            {/* Description */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                                 <div className="bg-white border border-gray-300 rounded-md overflow-hidden">
@@ -634,9 +723,11 @@ function Products() {
                                     />
                                 </div>
                             </div>
+
+                            {/* Price & Quantity */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Price (PKR)</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -648,7 +739,9 @@ function Products() {
                                     {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price[0] || errors.price}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Available Downloads / Stock</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        {form.type === "digital" ? "Available Downloads / Stock" : "Inventory Stock Quantity"}
+                                    </label>
                                     <input
                                         type="number"
                                         value={form.quantity}
@@ -659,6 +752,8 @@ function Products() {
                                     {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity[0] || errors.quantity}</p>}
                                 </div>
                             </div>
+
+                            {/* Product Preview Images */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-medium text-gray-700">Product Preview Images (Up to 15)</label>
@@ -707,6 +802,8 @@ function Products() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Action Buttons */}
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 sticky bottom-0 bg-white py-2">
                                 <button
                                     type="button"
