@@ -8,6 +8,8 @@ import StoreNavbar from "../components/StoreNavbar";
 import StoreFooter from "../components/StoreFooter";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, ShoppingBagIcon, TrashIcon } from "@heroicons/react/24/outline";
+import Loader from "../../admin/components/Loader";
+// ...
 
 function CheckoutPage() {
     const navigate = useNavigate();
@@ -31,17 +33,26 @@ function CheckoutPage() {
     const [promoInput, setPromoInput] = useState("");
     const [appliedPromo, setAppliedPromo] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/store/public-settings")
-            .then((res) => res.json())
-            .then(setPublicSettings)
-            .catch(() => { });
-
-        fetchCheckoutSettingsApi()
-            .then(setSettings)
-            .catch(() => { });
+        const loadCheckoutData = async () => {
+            try {
+                const [settingsData, publicSettingsRes] = await Promise.all([
+                    fetchCheckoutSettingsApi(),
+                    fetch("http://localhost:8000/api/public-settings").then((r) => r.json()),
+                ]);
+                setSettings(settingsData);
+                setPublicSettings(publicSettingsRes);
+            } catch (err) {
+                console.error("Checkout load error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadCheckoutData();
     }, []);
+
 
     const handleProvinceChange = (e) => {
         const selectedProvince = e.target.value;
@@ -116,7 +127,7 @@ function CheckoutPage() {
             setSubmitting(false);
         }
     };
-
+    if (loading) return <Loader />;
     if (cart.length === 0) {
         return (
             <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
@@ -244,8 +255,8 @@ function CheckoutPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <label
                                         className={`p-4 rounded-xl border cursor-pointer flex items-center justify-between transition ${form.payment_method === "advance"
-                                                ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-100"
-                                                : "border-gray-200"
+                                            ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-100"
+                                            : "border-gray-200"
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
@@ -265,10 +276,10 @@ function CheckoutPage() {
 
                                     <label
                                         className={`p-4 rounded-xl border transition ${hasOnlyDigital
-                                                ? "opacity-40 cursor-not-allowed bg-gray-50 border-gray-200"
-                                                : form.payment_method === "cod"
-                                                    ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-100 cursor-pointer"
-                                                    : "border-gray-200 cursor-pointer"
+                                            ? "opacity-40 cursor-not-allowed bg-gray-50 border-gray-200"
+                                            : form.payment_method === "cod"
+                                                ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-100 cursor-pointer"
+                                                : "border-gray-200 cursor-pointer"
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">

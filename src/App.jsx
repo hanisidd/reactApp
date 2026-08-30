@@ -44,7 +44,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/user/dashboard" element={<UserDashboard />} />
+                    <Route path="/dashboard" element={<UserDashboard />} />
                     {/* Admin Panel Routes */}
                     <Route path="/admin/login" element={<Login />} />
                     <Route element={<ProtectedRoute />}>

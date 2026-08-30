@@ -22,13 +22,13 @@ function UserDashboard() {
             return;
         }
 
-        fetch("http://localhost:8000/api/store/public-settings")
+        fetch("http://localhost:8000/api/public-settings")
             .then((r) => r.json())
             .then(setPublicSettings)
             .catch(() => {});
 
         const token = localStorage.getItem("user_token");
-        fetch("http://localhost:8000/api/user/orders", {
+        fetch("http://localhost:8000/api/orders", {
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Accept": "application/json",

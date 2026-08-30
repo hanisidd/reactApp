@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function Login() {
     const navigate = useNavigate();
@@ -10,6 +11,8 @@ function Login() {
         password: "",
     });
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+
     const form = (event) => {
         const { name, value } = event.target;
         setCredentials(prevLogin => ({
@@ -42,10 +45,15 @@ function Login() {
             return
         }
         try {
+            setLoading(true);
             await login(credentials);
+            toast.success("Welcome back!");
             navigate("/admin/dashboard")
         } catch (error) {
-            console.log(error);
+            const message = error?.data?.message || "Invalid email or password.";
+            toast.error(message);
+        } finally {
+            setLoading(false);
         }
     }
     return (
@@ -66,8 +74,12 @@ function Login() {
                         {errors.password && (<p className="text-red-500 text-sm">{errors.password}</p>)}
                     </div>
 
-                    <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
-                        Login
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? "Signing in..." : "Login"}
                     </button>
                 </form>
             </div>

@@ -12,10 +12,46 @@ import {
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import Loader from "../components/Loader";
+import { Save } from "lucide-react";
+import EmailTemplatesTab from "../components/EmailTemplatesTab";
 
+const TEMPLATE_TYPES = [
+    { value: "digital_delivery", label: "Digital Product Delivery Email", subjectKey: "digital_email_subject", bodyKey: "digital_email_body" },
+    { value: "order_confirmation", label: "Order Confirmation Email", subjectKey: "order_confirmation_subject", bodyKey: "order_confirmation_body" },
+    { value: "order_preparing", label: "Order Preparing Status Email", subjectKey: "order_preparing_subject", bodyKey: "order_preparing_body" },
+    { value: "order_delivered", label: "Order Delivered Status Email", subjectKey: "order_delivered_subject", bodyKey: "order_delivered_body" },
+];
 const BASE_URL = "http://localhost:8000/api/admin";
 
 function Settings() {
+
+    const [selectedTemplateType, setSelectedTemplateType] = useState("digital_delivery");
+    const [savingTemplate, setSavingTemplate] = useState(false);
+
+    const activeTemplate = TEMPLATE_TYPES.find((t) => t.value === selectedTemplateType);
+
+    const handleSaveTemplate = async (e) => {
+        e.preventDefault();
+        try {
+            setSavingTemplate(true);
+            const payload = {
+                [activeTemplate.subjectKey]: form[activeTemplate.subjectKey] || "",
+                [activeTemplate.bodyKey]: form[activeTemplate.bodyKey] || "",
+            };
+            const res = await fetch(`${BASE_URL}/settings`, {
+                method: "POST",
+                headers: { ...getHeaders(), "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Failed to save template");
+            toast.success(`${activeTemplate.label} updated successfully!`);
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setSavingTemplate(false);
+        }
+    };
     const [activeTab, setActiveTab] = useState("branding");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -158,49 +194,43 @@ function Settings() {
             <div className="flex border-b border-gray-200 mb-6 gap-2 overflow-x-auto">
                 <button
                     onClick={() => setActiveTab("branding")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
-                        activeTab === "branding" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${activeTab === "branding" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
                 >
                     <BuildingStorefrontIcon className="w-4 h-4" /> Branding & Hero
                 </button>
                 <button
                     onClick={() => setActiveTab("about")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
-                        activeTab === "about" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${activeTab === "about" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
                 >
                     <InformationCircleIcon className="w-4 h-4" /> About Us Content
                 </button>
                 <button
                     onClick={() => setActiveTab("emails")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
-                        activeTab === "emails" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${activeTab === "emails" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
                 >
                     <EnvelopeIcon className="w-4 h-4" /> Email Templates
                 </button>
                 <button
                     onClick={() => setActiveTab("finance")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
-                        activeTab === "finance" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${activeTab === "finance" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
                 >
                     <BanknotesIcon className="w-4 h-4" /> Delivery & Tax
                 </button>
                 <button
                     onClick={() => setActiveTab("promos")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
-                        activeTab === "promos" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${activeTab === "promos" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
                 >
                     <TicketIcon className="w-4 h-4" /> Promo Codes
                 </button>
                 <button
                     onClick={() => setActiveTab("footer")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
-                        activeTab === "footer" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${activeTab === "footer" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                        }`}
                 >
                     <ShareIcon className="w-4 h-4" /> Footer & Social
                 </button>
@@ -358,106 +388,7 @@ function Settings() {
 
             {/* Tab: Email Templates */}
             {activeTab === "emails" && (
-                <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-xs text-blue-900 space-y-1">
-                        <p className="font-bold">Available Dynamic Placeholders:</p>
-                        <p className="font-mono">{`{customer_name}, {order_id}, {product_name}`}</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">1. Digital Product Delivery Email</h3>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
-                            <input
-                                type="text"
-                                value={form.digital_email_subject}
-                                onChange={(e) => setForm({ ...form, digital_email_subject: e.target.value })}
-                                className="w-full border rounded-lg px-3 py-2 text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
-                            <textarea
-                                rows="3"
-                                value={form.digital_email_body}
-                                onChange={(e) => setForm({ ...form, digital_email_body: e.target.value })}
-                                className="w-full border rounded-lg p-3 text-sm font-mono"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 border-t pt-4">
-                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">2. Order Confirmation Email</h3>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
-                            <input
-                                type="text"
-                                value={form.order_confirmation_subject}
-                                onChange={(e) => setForm({ ...form, order_confirmation_subject: e.target.value })}
-                                className="w-full border rounded-lg px-3 py-2 text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
-                            <textarea
-                                rows="3"
-                                value={form.order_confirmation_body}
-                                onChange={(e) => setForm({ ...form, order_confirmation_body: e.target.value })}
-                                className="w-full border rounded-lg p-3 text-sm font-mono"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 border-t pt-4">
-                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">3. Order Preparing Status Email</h3>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
-                            <input
-                                type="text"
-                                value={form.order_preparing_subject}
-                                onChange={(e) => setForm({ ...form, order_preparing_subject: e.target.value })}
-                                className="w-full border rounded-lg px-3 py-2 text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
-                            <textarea
-                                rows="3"
-                                value={form.order_preparing_body}
-                                onChange={(e) => setForm({ ...form, order_preparing_body: e.target.value })}
-                                className="w-full border rounded-lg p-3 text-sm font-mono"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4 border-t pt-4">
-                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">4. Order Delivered Status Email</h3>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
-                            <input
-                                type="text"
-                                value={form.order_delivered_subject}
-                                onChange={(e) => setForm({ ...form, order_delivered_subject: e.target.value })}
-                                className="w-full border rounded-lg px-3 py-2 text-sm"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
-                            <textarea
-                                rows="3"
-                                value={form.order_delivered_body}
-                                onChange={(e) => setForm({ ...form, order_delivered_body: e.target.value })}
-                                className="w-full border rounded-lg p-3 text-sm font-mono"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end pt-4 border-t">
-                        <button type="submit" disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition">
-                            {saving ? "Saving..." : "Save Email Settings"}
-                        </button>
-                    </div>
-                </form>
+                <EmailTemplatesTab form={form} setForm={setForm} getHeaders={getHeaders} />
             )}
 
             {/* Tab: Delivery & Tax */}

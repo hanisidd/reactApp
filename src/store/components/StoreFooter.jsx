@@ -6,7 +6,7 @@ function StoreFooter() {
     const [settings, setSettings] = useState(null);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/store/public-settings")
+        fetch("http://localhost:8000/api/public-settings")
             .then((res) => res.json())
             .then(setSettings)
             .catch(() => {});

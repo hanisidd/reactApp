@@ -37,7 +37,7 @@ function ProfilePage() {
         });
         setPreviewUrl(user.avatar_url || null);
 
-        fetch("http://localhost:8000/api/store/public-settings")
+        fetch("http://localhost:8000/api/public-settings")
             .then((res) => res.json())
             .then(setPublicSettings)
             .catch(() => {});

@@ -9,7 +9,7 @@ function ContactUs() {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/store/public-settings")
+        fetch("http://localhost:8000/api/public-settings")
             .then((res) => res.json())
             .then(setPublicSettings)
             .catch(() => {});
@@ -19,7 +19,7 @@ function ContactUs() {
         e.preventDefault();
         try {
             setSubmitting(true);
-            const res = await fetch("http://localhost:8000/api/store/contact", {
+            const res = await fetch("http://localhost:8000/api/contact", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify(form),

@@ -12,13 +12,16 @@ function LoginPage() {
     const [form, setForm] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (user) navigate("/");
-        fetch("http://localhost:8000/api/store/public-settings")
-            .then((res) => res.json())
-            .then(setPublicSettings)
-            .catch(() => {});
-    }, [user, navigate]);
+useEffect(() => {
+    if (user) {
+        navigate("/", { replace: true });
+        return;
+    }
+    fetch("http://localhost:8000/api/public-settings")
+        .then((res) => res.json())
+        .then(setPublicSettings)
+        .catch(() => {});
+}, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

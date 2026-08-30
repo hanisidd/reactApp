@@ -55,7 +55,7 @@ export const submitCheckoutApi = async (payload) => {
 
 // Customer Auth
 export const registerUserApi = async (payload) => {
-    const res = await fetch(`${BASE_URL}/user/register`, {
+    const res = await fetch(`${BASE_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify(payload),
@@ -66,7 +66,7 @@ export const registerUserApi = async (payload) => {
 };
 
 export const loginUserApi = async (payload) => {
-    const res = await fetch(`${BASE_URL}/user/login`, {
+    const res = await fetch(`${BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify(payload),
@@ -78,7 +78,7 @@ export const loginUserApi = async (payload) => {
 
 export const updateUserProfileApi = async (formData) => {
     const token = localStorage.getItem("user_token");
-    const res = await fetch(`${BASE_URL}/user/profile`, {
+    const res = await fetch(`${BASE_URL}/profile`, {
         method: "POST",
         headers: {
             "Accept": "application/json",

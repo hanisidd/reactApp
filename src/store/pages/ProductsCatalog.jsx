@@ -9,8 +9,10 @@ import {
 import StoreNavbar from "../components/StoreNavbar";
 import ProductCard from "../components/ProductCard";
 import StoreFooter from "../components/StoreFooter";
+import Loader from "../../admin/components/Loader";
+// ...
 
-const BASE_URL = "http://localhost:8000/api/store";
+const BASE_URL = "http://localhost:8000/api";
 
 function ProductsCatalog() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -29,10 +31,24 @@ function ProductsCatalog() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalResults, setTotalResults] = useState(0);
+    const [initialLoading, setInitialLoading] = useState(true);
 
     useEffect(() => {
-        fetch(`${BASE_URL}/public-settings`).then((r) => r.json()).then(setPublicSettings);
-        fetch(`${BASE_URL}/categories`).then((r) => r.json()).then((d) => setCategories(d.categories || []));
+        const loadMeta = async () => {
+            try {
+                const [settingsRes, categoriesRes] = await Promise.all([
+                    fetch(`${BASE_URL}/public-settings`).then((r) => r.json()),
+                    fetch(`${BASE_URL}/categories`).then((r) => r.json()),
+                ]);
+                setPublicSettings(settingsRes);
+                setCategories(categoriesRes.categories || []);
+            } catch (err) {
+                console.error("Catalog meta load error:", err);
+            } finally {
+                setInitialLoading(false);
+            }
+        };
+        loadMeta();
     }, []);
 
     useEffect(() => {
@@ -94,7 +110,7 @@ function ProductsCatalog() {
         setCurrentPage(1);
         setSearchParams({});
     };
-
+    if (initialLoading) return <Loader />;
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             <StoreNavbar
@@ -237,11 +253,10 @@ function ProductsCatalog() {
                                     <button
                                         key={pageNum}
                                         onClick={() => setCurrentPage(pageNum)}
-                                        className={`w-9 h-9 text-xs font-bold rounded-xl transition ${
-                                            currentPage === pageNum
-                                                ? "bg-blue-600 text-white shadow-md"
-                                                : "bg-white border text-gray-700 hover:bg-gray-50"
-                                        }`}
+                                        className={`w-9 h-9 text-xs font-bold rounded-xl transition ${currentPage === pageNum
+                                            ? "bg-blue-600 text-white shadow-md"
+                                            : "bg-white border text-gray-700 hover:bg-gray-50"
+                                            }`}
                                     >
                                         {pageNum}
                                     </button>

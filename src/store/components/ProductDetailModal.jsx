@@ -21,7 +21,6 @@ function ProductDetailModal({ product, onClose, onCheckoutNow }) {
 
     const handleAddToCart = () => {
         addToCart(product, isDigital ? 1 : quantity);
-        toast.success(`Added ${isDigital ? 1 : quantity}x "${product.title}" to cart!`);
     };
 
     const handleBuyNow = () => {
@@ -75,9 +74,8 @@ function ProductDetailModal({ product, onClose, onCheckoutNow }) {
                                 <button
                                     key={img.id}
                                     onClick={() => setCurrentImageIndex(idx)}
-                                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition ${
-                                        currentImageIndex === idx ? "border-blue-600 ring-2 ring-blue-100" : "border-gray-200"
-                                    }`}
+                                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition ${currentImageIndex === idx ? "border-blue-600 ring-2 ring-blue-100" : "border-gray-200"
+                                        }`}
                                 >
                                     <img src={img.image_url} alt="thumb" className="w-full h-full object-cover" />
                                 </button>

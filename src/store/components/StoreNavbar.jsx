@@ -23,13 +23,13 @@ function StoreNavbar({ publicSettings, categories: propCategories, onSelectCateg
 
     useEffect(() => {
         if (!publicSettings) {
-            fetch("http://localhost:8000/api/store/public-settings")
+            fetch("http://localhost:8000/api/public-settings")
                 .then((r) => r.json())
                 .then(setSettings)
                 .catch(() => {});
         }
         if (!propCategories || propCategories.length === 0) {
-            fetch("http://localhost:8000/api/store/categories")
+            fetch("http://localhost:8000/api/categories")
                 .then((r) => r.json())
                 .then((data) => setCategories(data.categories || []))
                 .catch(() => {});
@@ -121,7 +121,7 @@ function StoreNavbar({ publicSettings, categories: propCategories, onSelectCateg
                                         <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
                                     </div>
                                     <Link
-                                        to="/user/dashboard"
+                                        to="/dashboard"
                                         onClick={() => setUserDropdown(false)}
                                         className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium"
                                     >

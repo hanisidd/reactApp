@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { 
-    ArrowRightIcon, 
-    SparklesIcon, 
-    ShieldCheckIcon, 
-    TruckIcon 
+import {
+    ArrowRightIcon,
+    SparklesIcon,
+    ShieldCheckIcon,
+    TruckIcon
 } from "@heroicons/react/24/outline";
 import StoreNavbar from "../components/StoreNavbar";
 import ProductCard from "../components/ProductCard";
 import StoreFooter from "../components/StoreFooter";
+import Loader from "../../admin/components/Loader";
+// ...
+
 
 function Storefront() {
     const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -16,17 +19,25 @@ function Storefront() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/store/public-settings")
-            .then((r) => r.json())
-            .then(setPublicSettings)
-            .catch((err) => console.error("Settings error:", err));
-
-        fetch("http://localhost:8000/api/store/products/featured")
-            .then((r) => r.json())
-            .then((data) => setFeaturedProducts(data.products || []))
-            .catch((err) => console.error("Featured fetch error:", err))
-            .finally(() => setLoading(false));
+        const loadHomeData = async () => {
+            try {
+                const [settingsRes, featuredRes] = await Promise.all([
+                    fetch("http://localhost:8000/api/public-settings").then((r) => r.json()),
+                    fetch("http://localhost:8000/api/products/featured").then((r) => r.json()),
+                ]);
+                setPublicSettings(settingsRes);
+                setFeaturedProducts(featuredRes.products || []);
+            } catch (err) {
+                console.error("Storefront load error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadHomeData();
     }, []);
+
+    if (loading) return <Loader />;
+
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">

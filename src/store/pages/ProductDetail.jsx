@@ -18,12 +18,12 @@ function ProductDetail() {
     const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/store/public-settings")
+        fetch("http://localhost:8000/api/public-settings")
             .then((r) => r.json())
             .then(setPublicSettings)
             .catch(() => {});
 
-        fetch(`http://localhost:8000/api/store/products/${id}`)
+        fetch(`http://localhost:8000/api/products/${id}`)
             .then((r) => r.json())
             .then((data) => setProduct(data.product))
             .catch(() => toast.error("Failed to load product details"))
@@ -35,11 +35,9 @@ function ProductDetail() {
 
     const images = product.images || [];
     const isDigital = product.type === "digital";
-
-    const handleAddToCart = () => {
-        addToCart(product, isDigital ? 1 : quantity);
-        toast.success(`Added "${product.title}" to cart!`);
-    };
+const handleAddToCart = () => {
+    addToCart(product, isDigital ? 1 : quantity);
+};
 
     const handleBuyNow = () => {
         addToCart(product, isDigital ? 1 : quantity);
