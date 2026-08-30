@@ -9,7 +9,6 @@ const getHeaders = () => {
     };
 };
 
-// Store Products & Categories
 export const fetchStoreProductsApi = async (categoryId = null) => {
     const url = categoryId ? `${BASE_URL}/store/products?category_id=${categoryId}` : `${BASE_URL}/store/products`;
     const res = await fetch(url, { headers: getHeaders() });
@@ -77,11 +76,15 @@ export const loginUserApi = async (payload) => {
     return data;
 };
 
-export const updateUserProfileApi = async (payload) => {
+export const updateUserProfileApi = async (formData) => {
+    const token = localStorage.getItem("user_token");
     const res = await fetch(`${BASE_URL}/user/profile`, {
-        method: "PUT",
-        headers: getHeaders(),
-        body: JSON.stringify(payload),
+        method: "POST",
+        headers: {
+            "Accept": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: formData,
     });
     const data = await res.json();
     if (!res.ok) throw data;

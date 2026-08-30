@@ -3,6 +3,13 @@ import { Link } from "react-router-dom";
 import { getDashboardDataApi } from "../services/dashboard";
 import Loader from "../components/Loader";
 import toast from "react-hot-toast";
+import { 
+    CurrencyDollarIcon, 
+    ShoppingBagIcon, 
+    UserGroupIcon, 
+    Square3Stack3DIcon,
+    ArrowRightIcon
+} from "@heroicons/react/24/outline";
 
 function Dashboard() {
     const [data, setData] = useState(null);
@@ -29,7 +36,7 @@ function Dashboard() {
     const { stats, recent_orders } = data || {};
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
@@ -47,14 +54,14 @@ function Dashboard() {
                             Total Revenue
                         </p>
                         <h3 className="text-2xl font-extrabold text-gray-900 mt-1">
-                            {stats?.total_earnings?.toFixed(2) || "0.00"}
+                            PKR {stats?.total_earnings?.toFixed(2) || "0.00"}
                         </h3>
                         <span className="text-[11px] text-green-600 font-medium mt-1 inline-block">
-                            ★ Successful completed orders
+                            Successful completed orders
                         </span>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-xl font-bold">
-                        PKR
+                    <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
+                        <CurrencyDollarIcon className="w-6 h-6" />
                     </div>
                 </div>
 
@@ -68,11 +75,11 @@ function Dashboard() {
                             {stats?.total_orders || 0}
                         </h3>
                         <span className="text-[11px] text-blue-600 font-medium mt-1 inline-block">
-                            📦 All purchase requests
+                            All purchase requests
                         </span>
                     </div>
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl font-bold">
-                        🛍
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                        <ShoppingBagIcon className="w-6 h-6" />
                     </div>
                 </div>
 
@@ -86,15 +93,15 @@ function Dashboard() {
                             {stats?.total_users || 0}
                         </h3>
                         <span className="text-[11px] text-purple-600 font-medium mt-1 inline-block">
-                            👤 Registered accounts
+                            Registered accounts
                         </span>
                     </div>
-                    <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl font-bold">
-                        👥
+                    <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                        <UserGroupIcon className="w-6 h-6" />
                     </div>
                 </div>
 
-                {/* Digital Products */}
+                {/* Active Products */}
                 <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 flex items-center justify-between">
                     <div>
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -104,11 +111,11 @@ function Dashboard() {
                             {stats?.total_products || 0}
                         </h3>
                         <span className="text-[11px] text-amber-600 font-medium mt-1 inline-block">
-                            📁 Across {stats?.total_categories || 0} categories
+                            Across {stats?.total_categories || 0} categories
                         </span>
                     </div>
-                    <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl font-bold">
-                        💾
+                    <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                        <Square3Stack3DIcon className="w-6 h-6" />
                     </div>
                 </div>
             </div>
@@ -124,12 +131,11 @@ function Dashboard() {
                     </div>
                     <Link
                         to="/admin/orders"
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800 transition"
+                        className="text-sm font-medium text-blue-600 hover:text-blue-800 transition flex items-center gap-1"
                     >
-                        View All Orders &rarr;
+                        View All Orders <ArrowRightIcon className="w-4 h-4" />
                     </Link>
                 </div>
-
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -166,7 +172,7 @@ function Dashboard() {
                                             {order.product?.title || "Deleted Product"}
                                         </td>
                                         <td className="px-6 py-4 font-bold text-gray-900">
-                                            {parseFloat(order.total_amount).toFixed(2)}
+                                            PKR {parseFloat(order.total_amount).toFixed(2)}
                                         </td>
                                         <td className="px-6 py-4">
                                             <span

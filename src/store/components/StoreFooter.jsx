@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { ChatBubbleLeftRightIcon, CameraIcon, HandThumbUpIcon } from "@heroicons/react/24/outline";
 
 function StoreFooter() {
     const [settings, setSettings] = useState(null);
 
     useEffect(() => {
-        fetch("http://localhost:8000/api/admin/store/public-settings")
+        fetch("http://localhost:8000/api/store/public-settings")
             .then((res) => res.json())
             .then(setSettings)
             .catch(() => {});
@@ -29,24 +30,22 @@ function StoreFooter() {
                         {settings?.footer_about || "Your trusted store for digital downloads and physical products."}
                     </p>
                 </div>
-
                 <div>
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Quick Links</h4>
                     <ul className="space-y-2 text-xs">
-                        <li><a href="/" className="hover:text-blue-400 transition">All Products</a></li>
-                        <li><a href="#about" className="hover:text-blue-400 transition">About Us</a></li>
+                        <li><Link to="/products" className="hover:text-blue-400 transition">All Products</Link></li>
+                        <li><Link to="/about" className="hover:text-blue-400 transition">About Us</Link></li>
+                        <li><Link to="/contact" className="hover:text-blue-400 transition">Contact Us</Link></li>
                     </ul>
                 </div>
-
                 <div>
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Contact Us</h4>
                     <ul className="space-y-2 text-xs text-gray-400">
-                        <li>📍 {settings?.footer_address || "Pakistan"}</li>
-                        <li>✉ {settings?.footer_email || "support@store.pk"}</li>
-                        <li>📞 {settings?.footer_phone || "+92 300 0000000"}</li>
+                        <li>{settings?.footer_address || "Pakistan"}</li>
+                        <li>{settings?.footer_email || "support@store.pk"}</li>
+                        <li>{settings?.footer_phone || "+92 300 0000000"}</li>
                     </ul>
                 </div>
-
                 <div>
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Connect With Us</h4>
                     <div className="flex items-center gap-3">
@@ -68,7 +67,6 @@ function StoreFooter() {
                     </div>
                 </div>
             </div>
-
             <div className="max-w-7xl mx-auto px-6 pt-6 border-t border-gray-800 text-center text-xs text-gray-500">
                 &copy; {new Date().getFullYear()} {settings?.brand_name || "DigitalStore"}. All rights reserved.
             </div>

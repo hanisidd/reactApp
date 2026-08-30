@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { 
-    BuildingStorefrontIcon, 
-    BanknotesIcon, 
-    TicketIcon, 
-    ShareIcon, 
-    TrashIcon, 
-    PencilSquareIcon, 
-    PlusIcon 
+import {
+    BuildingStorefrontIcon,
+    BanknotesIcon,
+    TicketIcon,
+    ShareIcon,
+    EnvelopeIcon,
+    InformationCircleIcon,
+    TrashIcon,
+    PencilSquareIcon,
+    PlusIcon
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 import Loader from "../components/Loader";
-
 
 const BASE_URL = "http://localhost:8000/api/admin";
 
@@ -19,7 +20,6 @@ function Settings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // Form State
     const [form, setForm] = useState({
         brand_name: "",
         hero_heading: "",
@@ -33,6 +33,24 @@ function Settings() {
         footer_instagram: "",
         footer_facebook: "",
         footer_about: "",
+        // About Us Tab
+        about_heading: "",
+        about_description: "",
+        about_f1_title: "",
+        about_f1_desc: "",
+        about_f2_title: "",
+        about_f2_desc: "",
+        about_f3_title: "",
+        about_f3_desc: "",
+        // Email Templates Tab
+        digital_email_subject: "",
+        digital_email_body: "",
+        order_confirmation_subject: "",
+        order_confirmation_body: "",
+        order_preparing_subject: "",
+        order_preparing_body: "",
+        order_delivered_subject: "",
+        order_delivered_body: "",
     });
 
     const [logoFile, setLogoFile] = useState(null);
@@ -40,17 +58,10 @@ function Settings() {
     const [logoPreview, setLogoPreview] = useState(null);
     const [heroPreview, setHeroPreview] = useState(null);
 
-    // Promos State
     const [promos, setPromos] = useState([]);
     const [promoModalOpen, setPromoModalOpen] = useState(false);
     const [editingPromo, setEditingPromo] = useState(null);
-    const [promoForm, setPromoForm] = useState({
-        code: "",
-        type: "percentage",
-        value: "",
-        expires_at: "",
-        status: "active",
-    });
+    const [promoForm, setPromoForm] = useState({ code: "", type: "percentage", value: "", expires_at: "", status: "active" });
 
     useEffect(() => {
         fetchSettingsAndPromos();
@@ -68,7 +79,6 @@ function Settings() {
                 fetch(`${BASE_URL}/settings`, { headers: getHeaders() }),
                 fetch(`${BASE_URL}/promos`, { headers: getHeaders() }),
             ]);
-
             const setData = await setRes.json();
             const promoData = await promoRes.json();
 
@@ -91,7 +101,6 @@ function Settings() {
             setSaving(true);
             const formData = new FormData();
             Object.keys(form).forEach((key) => formData.append(key, form[key]));
-
             if (logoFile) formData.append("logo", logoFile);
             if (heroFile) formData.append("hero_image", heroFile);
 
@@ -100,7 +109,6 @@ function Settings() {
                 headers: { "Authorization": `Bearer ${localStorage.getItem("admin_token")}` },
                 body: formData,
             });
-
             if (!res.ok) throw new Error("Failed to save settings");
             toast.success("Settings updated successfully!");
         } catch (err) {
@@ -110,23 +118,19 @@ function Settings() {
         }
     };
 
-    // Promo Handlers
     const handleSavePromo = async (e) => {
         e.preventDefault();
         try {
             const url = editingPromo ? `${BASE_URL}/promos/${editingPromo.id}` : `${BASE_URL}/promos`;
             const method = editingPromo ? "PUT" : "POST";
-
             const res = await fetch(url, {
                 method,
                 headers: { ...getHeaders(), "Content-Type": "application/json" },
                 body: JSON.stringify(promoForm),
             });
-
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Operation failed");
-
-            toast.success(editingPromo ? "Promo code updated!" : "Promo code added!");
+            toast.success(editingPromo ? "Promo updated!" : "Promo added!");
             setPromoModalOpen(false);
             fetchSettingsAndPromos();
         } catch (err) {
@@ -135,13 +139,9 @@ function Settings() {
     };
 
     const handleDeletePromo = async (id) => {
-        if (!window.confirm("Delete this promo code?")) return;
+        if (!window.confirm("Delete promo code?")) return;
         try {
-            const res = await fetch(`${BASE_URL}/promos/${id}`, {
-                method: "DELETE",
-                headers: getHeaders(),
-            });
-            if (!res.ok) throw new Error("Could not delete promo");
+            await fetch(`${BASE_URL}/promos/${id}`, { method: "DELETE", headers: getHeaders() });
             toast.success("Promo code deleted");
             setPromos((prev) => prev.filter((p) => p.id !== id));
         } catch (err) {
@@ -155,59 +155,63 @@ function Settings() {
         <div className="p-6 max-w-6xl mx-auto">
             <h1 className="text-2xl font-bold text-gray-800 mb-6">Store Configuration</h1>
 
-            {/* Settings Tabs */}
-            <div className="flex border-b border-gray-200 mb-6 gap-2">
+            <div className="flex border-b border-gray-200 mb-6 gap-2 overflow-x-auto">
                 <button
                     onClick={() => setActiveTab("branding")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 ${
-                        activeTab === "branding"
-                            ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
+                        activeTab === "branding" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                 >
                     <BuildingStorefrontIcon className="w-4 h-4" /> Branding & Hero
                 </button>
-
+                <button
+                    onClick={() => setActiveTab("about")}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
+                        activeTab === "about" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
+                >
+                    <InformationCircleIcon className="w-4 h-4" /> About Us Content
+                </button>
+                <button
+                    onClick={() => setActiveTab("emails")}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
+                        activeTab === "emails" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
+                    }`}
+                >
+                    <EnvelopeIcon className="w-4 h-4" /> Email Templates
+                </button>
                 <button
                     onClick={() => setActiveTab("finance")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 ${
-                        activeTab === "finance"
-                            ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
+                        activeTab === "finance" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                 >
                     <BanknotesIcon className="w-4 h-4" /> Delivery & Tax
                 </button>
-
                 <button
                     onClick={() => setActiveTab("promos")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 ${
-                        activeTab === "promos"
-                            ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
+                        activeTab === "promos" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                 >
                     <TicketIcon className="w-4 h-4" /> Promo Codes
                 </button>
-
                 <button
                     onClick={() => setActiveTab("footer")}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 ${
-                        activeTab === "footer"
-                            ? "border-blue-600 text-blue-600 bg-blue-50/50"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
+                    className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-t-lg transition border-b-2 whitespace-nowrap ${
+                        activeTab === "footer" ? "border-blue-600 text-blue-600 bg-blue-50/50" : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                 >
                     <ShareIcon className="w-4 h-4" /> Footer & Social
                 </button>
             </div>
 
-            {/* Tab 1: Branding & Hero */}
+            {/* Tab: Branding */}
             {activeTab === "branding" && (
                 <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Store Brand / Heading Name</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Brand Name</label>
                             <input
                                 type="text"
                                 value={form.brand_name}
@@ -226,16 +230,13 @@ function Settings() {
                                 }}
                                 className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700"
                             />
-                            {logoPreview && (
-                                <img src={logoPreview} alt="Logo" className="w-12 h-12 object-contain mt-2 border rounded-md p-1" />
-                            )}
+                            {logoPreview && <img src={logoPreview} alt="Logo" className="w-12 h-12 object-contain mt-2 border rounded-md p-1" />}
                         </div>
                     </div>
-
                     <div className="border-t border-gray-100 pt-4 space-y-4">
                         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Hero Banner Configuration</h3>
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Hero Main Heading</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Hero Heading</label>
                             <input
                                 type="text"
                                 value={form.hero_heading}
@@ -243,9 +244,8 @@ function Settings() {
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
                             />
                         </div>
-
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Hero Subtitle Text</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Hero Subtitle</label>
                             <textarea
                                 rows="2"
                                 value={form.hero_text}
@@ -253,9 +253,8 @@ function Settings() {
                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
                             ></textarea>
                         </div>
-
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Hero Image</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Hero Banner Image</label>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -265,12 +264,9 @@ function Settings() {
                                 }}
                                 className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-50 file:text-blue-700"
                             />
-                            {heroPreview && (
-                                <img src={heroPreview} alt="Hero" className="w-32 h-20 object-cover mt-2 border rounded-md" />
-                            )}
+                            {heroPreview && <img src={heroPreview} alt="Hero" className="w-32 h-20 object-cover mt-2 border rounded-md" />}
                         </div>
                     </div>
-
                     <div className="flex justify-end pt-4">
                         <button type="submit" disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition">
                             {saving ? "Saving..." : "Save Branding Settings"}
@@ -279,33 +275,216 @@ function Settings() {
                 </form>
             )}
 
-            {/* Tab 2: Delivery & Tax */}
+            {/* Tab: About Us Data */}
+            {activeTab === "about" && (
+                <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">About Us Page Customization</h3>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Main Heading</label>
+                        <input
+                            type="text"
+                            value={form.about_heading}
+                            onChange={(e) => setForm({ ...form, about_heading: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Page Description Paragraph</label>
+                        <textarea
+                            rows="3"
+                            value={form.about_description}
+                            onChange={(e) => setForm({ ...form, about_description: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                        ></textarea>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-blue-600">Feature Card 1 Title</label>
+                            <input
+                                type="text"
+                                value={form.about_f1_title}
+                                onChange={(e) => setForm({ ...form, about_f1_title: e.target.value })}
+                                className="w-full border rounded-lg p-2 text-xs"
+                            />
+                            <textarea
+                                rows="2"
+                                value={form.about_f1_desc}
+                                onChange={(e) => setForm({ ...form, about_f1_desc: e.target.value })}
+                                className="w-full border rounded-lg p-2 text-xs"
+                            ></textarea>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-purple-600">Feature Card 2 Title</label>
+                            <input
+                                type="text"
+                                value={form.about_f2_title}
+                                onChange={(e) => setForm({ ...form, about_f2_title: e.target.value })}
+                                className="w-full border rounded-lg p-2 text-xs"
+                            />
+                            <textarea
+                                rows="2"
+                                value={form.about_f2_desc}
+                                onChange={(e) => setForm({ ...form, about_f2_desc: e.target.value })}
+                                className="w-full border rounded-lg p-2 text-xs"
+                            ></textarea>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-xs font-bold text-emerald-600">Feature Card 3 Title</label>
+                            <input
+                                type="text"
+                                value={form.about_f3_title}
+                                onChange={(e) => setForm({ ...form, about_f3_title: e.target.value })}
+                                className="w-full border rounded-lg p-2 text-xs"
+                            />
+                            <textarea
+                                rows="2"
+                                value={form.about_f3_desc}
+                                onChange={(e) => setForm({ ...form, about_f3_desc: e.target.value })}
+                                className="w-full border rounded-lg p-2 text-xs"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                        <button type="submit" disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition">
+                            {saving ? "Saving..." : "Save About Us Content"}
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {/* Tab: Email Templates */}
+            {activeTab === "emails" && (
+                <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-xs text-blue-900 space-y-1">
+                        <p className="font-bold">Available Dynamic Placeholders:</p>
+                        <p className="font-mono">{`{customer_name}, {order_id}, {product_name}`}</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">1. Digital Product Delivery Email</h3>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
+                            <input
+                                type="text"
+                                value={form.digital_email_subject}
+                                onChange={(e) => setForm({ ...form, digital_email_subject: e.target.value })}
+                                className="w-full border rounded-lg px-3 py-2 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
+                            <textarea
+                                rows="3"
+                                value={form.digital_email_body}
+                                onChange={(e) => setForm({ ...form, digital_email_body: e.target.value })}
+                                className="w-full border rounded-lg p-3 text-sm font-mono"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 border-t pt-4">
+                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">2. Order Confirmation Email</h3>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
+                            <input
+                                type="text"
+                                value={form.order_confirmation_subject}
+                                onChange={(e) => setForm({ ...form, order_confirmation_subject: e.target.value })}
+                                className="w-full border rounded-lg px-3 py-2 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
+                            <textarea
+                                rows="3"
+                                value={form.order_confirmation_body}
+                                onChange={(e) => setForm({ ...form, order_confirmation_body: e.target.value })}
+                                className="w-full border rounded-lg p-3 text-sm font-mono"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 border-t pt-4">
+                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">3. Order Preparing Status Email</h3>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
+                            <input
+                                type="text"
+                                value={form.order_preparing_subject}
+                                onChange={(e) => setForm({ ...form, order_preparing_subject: e.target.value })}
+                                className="w-full border rounded-lg px-3 py-2 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
+                            <textarea
+                                rows="3"
+                                value={form.order_preparing_body}
+                                onChange={(e) => setForm({ ...form, order_preparing_body: e.target.value })}
+                                className="w-full border rounded-lg p-3 text-sm font-mono"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 border-t pt-4">
+                        <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wider border-b pb-1">4. Order Delivered Status Email</h3>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Subject</label>
+                            <input
+                                type="text"
+                                value={form.order_delivered_subject}
+                                onChange={(e) => setForm({ ...form, order_delivered_subject: e.target.value })}
+                                className="w-full border rounded-lg px-3 py-2 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Body HTML / Text</label>
+                            <textarea
+                                rows="3"
+                                value={form.order_delivered_body}
+                                onChange={(e) => setForm({ ...form, order_delivered_body: e.target.value })}
+                                className="w-full border rounded-lg p-3 text-sm font-mono"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4 border-t">
+                        <button type="submit" disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition">
+                            {saving ? "Saving..." : "Save Email Settings"}
+                        </button>
+                    </div>
+                </form>
+            )}
+
+            {/* Tab: Delivery & Tax */}
             {activeTab === "finance" && (
                 <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Default Delivery Fee (PKR)</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Delivery Fee (PKR)</label>
                             <input
                                 type="number"
                                 step="1"
                                 value={form.delivery_fee}
                                 onChange={(e) => setForm({ ...form, delivery_fee: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
                             />
                         </div>
-
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Estimated Tax Percentage (%)</label>
+                            <label className="block text-xs font-bold text-gray-700 mb-1">Tax Percentage (%)</label>
                             <input
                                 type="number"
                                 step="0.1"
                                 value={form.tax_percentage}
                                 onChange={(e) => setForm({ ...form, tax_percentage: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
                             />
                         </div>
                     </div>
-
                     <div className="flex justify-end pt-4">
                         <button type="submit" disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition">
                             {saving ? "Saving..." : "Save Delivery & Tax Settings"}
@@ -314,11 +493,11 @@ function Settings() {
                 </form>
             )}
 
-            {/* Tab 3: Promo Codes */}
+            {/* Tab: Promo Codes */}
             {activeTab === "promos" && (
                 <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-bold text-gray-800">Active Store Coupons</h2>
+                        <h2 className="text-base font-bold text-gray-800">Active Coupons</h2>
                         <button
                             onClick={() => {
                                 setEditingPromo(null);
@@ -330,7 +509,6 @@ function Settings() {
                             <PlusIcon className="w-4 h-4" /> Add Promo Code
                         </button>
                     </div>
-
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-gray-50 text-xs font-bold text-gray-600 uppercase border-b">
                             <tr>
@@ -380,7 +558,7 @@ function Settings() {
                 </div>
             )}
 
-            {/* Tab 4: Footer Data */}
+            {/* Tab: Footer Data */}
             {activeTab === "footer" && (
                 <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -390,7 +568,7 @@ function Settings() {
                                 type="text"
                                 value={form.footer_phone}
                                 onChange={(e) => setForm({ ...form, footer_phone: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
                             />
                         </div>
                         <div>
@@ -399,7 +577,7 @@ function Settings() {
                                 type="email"
                                 value={form.footer_email}
                                 onChange={(e) => setForm({ ...form, footer_email: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
                             />
                         </div>
                         <div>
@@ -408,7 +586,7 @@ function Settings() {
                                 type="text"
                                 value={form.footer_address}
                                 onChange={(e) => setForm({ ...form, footer_address: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
                             />
                         </div>
                         <div>
@@ -417,39 +595,19 @@ function Settings() {
                                 type="text"
                                 value={form.footer_whatsapp}
                                 onChange={(e) => setForm({ ...form, footer_whatsapp: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Instagram URL</label>
-                            <input
-                                type="text"
-                                value={form.footer_instagram}
-                                onChange={(e) => setForm({ ...form, footer_instagram: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1">Facebook URL</label>
-                            <input
-                                type="text"
-                                value={form.footer_facebook}
-                                onChange={(e) => setForm({ ...form, footer_facebook: e.target.value })}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
                             />
                         </div>
                     </div>
-
                     <div>
                         <label className="block text-xs font-bold text-gray-700 mb-1">Footer About Text</label>
                         <textarea
                             rows="2"
                             value={form.footer_about}
                             onChange={(e) => setForm({ ...form, footer_about: e.target.value })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none"
                         ></textarea>
                     </div>
-
                     <div className="flex justify-end pt-4">
                         <button type="submit" disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-lg hover:bg-blue-700 transition">
                             {saving ? "Saving..." : "Save Footer Settings"}
@@ -458,7 +616,7 @@ function Settings() {
                 </form>
             )}
 
-            {/* Add / Edit Promo Modal */}
+            {/* Promo Code Modal */}
             {promoModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">

@@ -1,23 +1,37 @@
+import { useNavigate } from "react-router-dom";
 import { ShoppingCartIcon } from "@heroicons/react/24/outline";
 import { useCart } from "../context/CartContext";
-import toast from "react-hot-toast";
 
-function ProductCard({ product, onViewDetails, onQuickBuy }) {
-    const { addToCart } = useCart();
+function ProductCard({ product }) {
+    const navigate = useNavigate();
+    const { addToCart, getItemQuantity } = useCart();
+
+    const inCartQty = getItemQuantity(product.id);
     const cover = product.images?.find((i) => i.is_cover) || product.images?.[0];
+
+    const handleCardClick = () => {
+        navigate(`/products/${product.id}`);
+    };
 
     const handleAddToCart = (e) => {
         e.stopPropagation();
         addToCart(product, 1);
-        toast.success(`Added "${product.title}" to cart!`);
+    };
+
+    const handleBuyNow = (e) => {
+        e.stopPropagation();
+        if (product.type !== "digital" || inCartQty === 0) {
+            addToCart(product, 1);
+        }
+        navigate("/checkout");
     };
 
     return (
         <div
-            onClick={() => onViewDetails(product)}
-            className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer flex flex-col"
+            onClick={handleCardClick}
+            className="group w-full bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer flex flex-col h-full"
         >
-            <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
+            <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden w-full">
                 {cover?.image_url ? (
                     <img
                         src={cover.image_url}
@@ -41,20 +55,20 @@ function ProductCard({ product, onViewDetails, onQuickBuy }) {
                 </span>
             </div>
 
-            <div className="p-5 flex-1 flex flex-col justify-between">
+            <div className="p-4 flex-1 flex flex-col justify-between">
                 <div>
-                    <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
                         {product.category?.name || "General"}
                     </span>
-                    <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition line-clamp-1">
+                    <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition line-clamp-1">
                         {product.title}
                     </h3>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-gray-50 flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
                     <div>
-                        <span className="text-xs text-gray-400 block">Price</span>
-                        <span className="text-lg font-extrabold text-gray-900">
+                        <span className="text-[10px] text-gray-400 block">Price</span>
+                        <span className="text-base font-black text-gray-900">
                             PKR {parseFloat(product.price).toLocaleString()}
                         </span>
                     </div>
@@ -62,18 +76,20 @@ function ProductCard({ product, onViewDetails, onQuickBuy }) {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleAddToCart}
-                            className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition flex items-center justify-center"
+                            className="relative p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition flex items-center justify-center"
                             title="Add to Cart"
                         >
-                            <ShoppingCartIcon className="w-4 h-4 text-gray-700" />
+                            <ShoppingCartIcon className="w-4 h-4" />
+                            {inCartQty > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 bg-emerald-600 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                                    {inCartQty}
+                                </span>
+                            )}
                         </button>
+
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddToCart(e);
-                                onQuickBuy();
-                            }}
-                            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-sm transition"
+                            onClick={handleBuyNow}
+                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
                         >
                             Buy Now
                         </button>
