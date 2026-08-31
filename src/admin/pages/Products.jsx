@@ -379,6 +379,7 @@ function Products() {
                                 Type {sortConfig.key === "type" ? (sortConfig.direction === "asc" ? "▲" : "▼") : "↕"}
                             </th>
                             <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                            <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider">Added On</th>
                             <th
                                 onClick={() => handleSort("price")}
                                 className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
@@ -398,7 +399,7 @@ function Products() {
                     <tbody className="divide-y divide-gray-200 text-sm">
                         {products.length === 0 ? (
                             <tr>
-                                <td colSpan="8" className="text-center py-6 text-gray-500">
+                                <td colSpan="9" className="text-center py-6 text-gray-500">
                                     No matching products found.
                                 </td>
                             </tr>
@@ -443,6 +444,15 @@ function Products() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-gray-600">{product.category?.name || "N/A"}</td>
+                                        <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                                            {product.created_at
+                                                ? new Date(product.created_at).toLocaleDateString(undefined, {
+                                                      year: "numeric",
+                                                      month: "short",
+                                                      day: "numeric",
+                                                  })
+                                                : "N/A"}
+                                        </td>
                                         <td className="px-6 py-4 font-medium text-gray-900">
                                             ${parseFloat(product.price).toFixed(2)}
                                         </td>
@@ -652,8 +662,9 @@ function Products() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         type="button"
+                                        disabled={!!editingProduct && form.type !== "digital"}
                                         onClick={() => setForm((prev) => ({ ...prev, type: "digital" }))}
-                                        className={`p-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition ${
+                                        className={`p-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed ${
                                             form.type === "digital"
                                                 ? "bg-purple-50 border-purple-600 text-purple-700 ring-2 ring-purple-100 font-semibold"
                                                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
@@ -663,8 +674,9 @@ function Products() {
                                     </button>
                                     <button
                                         type="button"
+                                        disabled={!!editingProduct && form.type !== "physical"}
                                         onClick={() => setForm((prev) => ({ ...prev, type: "physical" }))}
-                                        className={`p-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition ${
+                                        className={`p-3 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition disabled:opacity-40 disabled:cursor-not-allowed ${
                                             form.type === "physical"
                                                 ? "bg-blue-50 border-blue-600 text-blue-700 ring-2 ring-blue-100 font-semibold"
                                                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
@@ -673,6 +685,11 @@ function Products() {
                                         <span>📦 Physical Product</span>
                                     </button>
                                 </div>
+                                {editingProduct && (
+                                    <p className="text-[11px] text-gray-400 mt-1.5">
+                                        Product type can't be changed after creation — delete and re-add to switch types.
+                                    </p>
+                                )}
                             </div>
 
                             {form.type === "digital" && (

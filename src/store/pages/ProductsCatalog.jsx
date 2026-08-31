@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import Select from "react-select";
 import {
     FunnelIcon,
     MagnifyingGlassIcon,
@@ -33,6 +34,14 @@ function ProductsCatalog() {
     const [totalResults, setTotalResults] = useState(0);
     const [initialLoading, setInitialLoading] = useState(true);
 
+    // Guards against out-of-order responses: if the user changes filters
+    // quickly, an earlier (slower) request can resolve *after* a later one
+    // and overwrite the correct results/pagination with stale data. This is
+    // what caused pagination to look wrong only on first load — the initial
+    // fetch and a filter-triggered fetch could race, and whichever settled
+    // last (not whichever was requested last) won.
+    const requestSeq = useRef(0);
+
     useEffect(() => {
         const loadMeta = async () => {
             try {
@@ -57,9 +66,11 @@ function ProductsCatalog() {
 
     useEffect(() => {
         fetchCatalogProducts();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage, selectedCategory, typeFilter, sortBy]);
 
     const fetchCatalogProducts = async () => {
+        const mySeq = ++requestSeq.current;
         try {
             setLoading(true);
             const params = new URLSearchParams({
@@ -74,19 +85,33 @@ function ProductsCatalog() {
             });
             const res = await fetch(`${BASE_URL}/products?${params.toString()}`);
             const data = await res.json();
+
+            // Only apply this response if nothing newer has been requested
+            // since it went out — otherwise a slow first-load request can
+            // clobber a faster, more recent filtered request.
+            if (mySeq !== requestSeq.current) return;
+
             setProducts(data.data || []);
             setTotalPages(data.last_page || 1);
             setTotalResults(data.total || 0);
         } catch (err) {
             console.error("Catalog fetch error:", err);
         } finally {
-            setLoading(false);
+            if (mySeq === requestSeq.current) {
+                setLoading(false);
+            }
         }
     };
 
-    const handleCategoryChange = (e) => {
-        const catId = e.target.value;
+    const categoryOptions = [
+        { value: "", label: "All Categories" },
+        ...categories.map((c) => ({ value: String(c.id), label: c.name })),
+    ];
+
+    const handleCategorySelect = (option) => {
+        const catId = option?.value || "";
         setSelectedCategory(catId);
+        setCurrentPage(1);
         if (catId) {
             setSearchParams({ category_id: catId });
         } else {
@@ -117,6 +142,7 @@ function ProductsCatalog() {
                 publicSettings={publicSettings}
                 onSelectCategory={(catId) => {
                     setSelectedCategory(catId || "");
+                    setCurrentPage(1);
                     if (catId) setSearchParams({ category_id: catId });
                     else setSearchParams({});
                 }}
@@ -152,16 +178,18 @@ function ProductsCatalog() {
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5">Category</label>
-                                <select
-                                    value={selectedCategory}
-                                    onChange={handleCategoryChange}
-                                    className="w-full border rounded-xl px-3 py-2 text-xs bg-white outline-none focus:border-blue-600"
-                                >
-                                    <option value="">All Categories</option>
-                                    {categories.map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </select>
+                                <Select
+                                    options={categoryOptions}
+                                    value={categoryOptions.find((opt) => opt.value === String(selectedCategory)) || categoryOptions[0]}
+                                    onChange={handleCategorySelect}
+                                    placeholder="Search categories..."
+                                    isSearchable
+                                    classNamePrefix="cat-select"
+                                    styles={{
+                                        control: (base) => ({ ...base, minHeight: "38px", fontSize: "0.75rem", borderRadius: "0.75rem" }),
+                                        menu: (base) => ({ ...base, fontSize: "0.75rem" }),
+                                    }}
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5">Format</label>
@@ -173,7 +201,10 @@ function ProductsCatalog() {
                                                 name="type"
                                                 value={type}
                                                 checked={typeFilter === type}
-                                                onChange={(e) => setTypeFilter(e.target.value)}
+                                                onChange={(e) => {
+                                                    setTypeFilter(e.target.value);
+                                                    setCurrentPage(1);
+                                                }}
                                                 className="text-blue-600"
                                             />
                                             {type === "all" ? "All Items" : `${type} Products`}
@@ -214,7 +245,10 @@ function ProductsCatalog() {
                                 <span className="text-xs text-gray-500 font-medium">Sort:</span>
                                 <select
                                     value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
+                                    onChange={(e) => {
+                                        setSortBy(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
                                     className="border rounded-xl px-3 py-1.5 text-xs bg-white outline-none focus:border-blue-600 font-semibold"
                                 >
                                     <option value="newest">Newest Arrivals</option>

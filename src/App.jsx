@@ -25,7 +25,8 @@ import RegisterPage from "./store/pages/RegisterPage";
 import ProfilePage from "./store/pages/ProfilePage";
 import StoreGlobalModals from "./store/components/StoreGlobalModals";
 import UserDashboard from "./store/pages/UserDashboard";
-
+import PaymentReturn from "./store/pages/PaymentReturn";
+// ...
 function App() {
     return (
         <UserAuthProvider>
@@ -39,7 +40,7 @@ function App() {
                     <Route path="/about" element={<AboutUs />} />
                     <Route path="/contact" element={<ContactUs />} />
                     <Route path="/checkout" element={<CheckoutPage />} />
-                    
+                    <Route path="/payment/return" element={<PaymentReturn />} />
                     {/* Customer Account Standalone Pages */}
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />

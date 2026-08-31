@@ -72,6 +72,10 @@ export function CartProvider({ children }) {
     const subtotal = cart.reduce((sum, item) => sum + parseFloat(item.price) * (item.cartQuantity || 1), 0);
     const hasPhysicalProduct = cart.some((item) => item.type === "physical");
     const hasOnlyDigital = cart.length > 0 && cart.every((item) => item.type === "digital");
+    const hasBothTypes = hasPhysicalProduct && cart.some((item) => item.type === "digital");
+    const digitalSubtotal = cart
+        .filter((item) => item.type === "digital")
+        .reduce((sum, item) => sum + parseFloat(item.price), 0);
 
     return (
         <CartContext.Provider
@@ -86,6 +90,8 @@ export function CartProvider({ children }) {
                 subtotal,
                 hasPhysicalProduct,
                 hasOnlyDigital,
+                hasBothTypes,        // NEW
+                digitalSubtotal,      // NEW
                 isCartOpen,
                 openCart: () => setIsCartOpen(true),
                 closeCart: () => setIsCartOpen(false),

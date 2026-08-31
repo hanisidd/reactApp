@@ -2,18 +2,28 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUserAuth } from "../context/UserAuthContext";
-import { fetchCheckoutSettingsApi, validatePromoCodeApi, submitCheckoutApi } from "../services/storeApi";
+import { fetchCheckoutSettingsApi, validatePromoCodeApi, submitCheckoutApi, initiatePaymentApi } from "../services/storeApi";
 import { PAKISTAN_LOCATIONS } from "../data/pakistanLocations";
 import StoreNavbar from "../components/StoreNavbar";
 import StoreFooter from "../components/StoreFooter";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon, ShoppingBagIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ShoppingBagIcon, TrashIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import Loader from "../../admin/components/Loader";
 // ...
 
 function CheckoutPage() {
     const navigate = useNavigate();
-    const { cart, subtotal, hasPhysicalProduct, hasOnlyDigital, clearCart, updateQuantity, removeFromCart } = useCart();
+    const {
+        cart,
+        subtotal,
+        hasPhysicalProduct,
+        hasOnlyDigital,
+        hasBothTypes,
+        digitalSubtotal,
+        clearCart,
+        updateQuantity,
+        removeFromCart,
+    } = useCart();
     const { user } = useUserAuth();
 
     const [publicSettings, setPublicSettings] = useState(null);
@@ -118,7 +128,21 @@ function CheckoutPage() {
             };
 
             const response = await submitCheckoutApi(payload);
-            toast.success(`Order #${response.order.order_number} placed successfully!`);
+            const order = response.order;
+
+            // If this order needs a real payment (either "advance" was chosen,
+            // or it's a mixed cart where the digital portion must be prepaid
+            // even though COD was picked for the physical portion), send the
+            // browser to Safepay instead of finishing here.
+            if (response.requires_payment) {
+                toast.success(`Order #${order.order_number} created — redirecting to payment...`);
+                const paymentInit = await initiatePaymentApi(order.id);
+                clearCart();
+                window.location.href = paymentInit.redirect_url;
+                return;
+            }
+
+            toast.success(`Order #${order.order_number} placed successfully!`);
             clearCart();
             navigate("/products");
         } catch (err) {
@@ -269,7 +293,7 @@ function CheckoutPage() {
                                             />
                                             <div>
                                                 <p className="text-sm font-bold text-gray-900">Advance Payment</p>
-                                                <p className="text-[11px] text-gray-500">Bank Transfer / JazzCash / EasyPaisa</p>
+                                                <p className="text-[11px] text-gray-500">Pay securely via Safepay (cards & wallets)</p>
                                             </div>
                                         </div>
                                     </label>
@@ -300,6 +324,21 @@ function CheckoutPage() {
                                         </div>
                                     </label>
                                 </div>
+
+                                {/* Mixed cart + COD: digital items still need to be prepaid.
+                                    Surfaces the same rule the admin panel already shows
+                                    (see "Mixed COD" in Orders.jsx) at the point of selection. */}
+                                {hasBothTypes && form.payment_method === "cod" && (
+                                    <div className="mt-3 flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3.5 text-xs">
+                                        <InformationCircleIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                                        <p>
+                                            Your cart has both digital and physical items. The digital portion
+                                            (<strong>PKR {digitalSubtotal.toLocaleString()}</strong>) requires advance
+                                            payment and will be processed via Safepay before your order is confirmed —
+                                            only the physical items remain payable on delivery.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </form>
                     </div>
@@ -401,7 +440,7 @@ function CheckoutPage() {
                                 disabled={submitting}
                                 className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-lg transition disabled:opacity-50"
                             >
-                                {submitting ? "Placing Order..." : `Confirm & Place Order (PKR ${finalTotal.toLocaleString()})`}
+                                {submitting ? "Processing..." : `Confirm & Place Order (PKR ${finalTotal.toLocaleString()})`}
                             </button>
                         </div>
                     </div>

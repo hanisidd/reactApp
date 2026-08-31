@@ -198,6 +198,7 @@ function Orders() {
                                     </span>
                                 </th>
                                 <th className="px-6 py-3.5">Customer Details</th>
+                                <th className="px-6 py-3.5">Date</th>
                                 <th className="px-6 py-3.5">Total & Payment</th>
                                 <th className="px-6 py-3.5">Status</th>
                                 <th className="px-6 py-3.5">Digital Email</th>
@@ -207,7 +208,7 @@ function Orders() {
                         <tbody className="divide-y divide-gray-100 text-xs">
                             {paginatedData.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="text-center py-8 text-gray-400">
+                                    <td colSpan="7" className="text-center py-8 text-gray-400">
                                         No matching orders found.
                                     </td>
                                 </tr>
@@ -227,6 +228,15 @@ function Orders() {
                                                 <div className="text-[11px] text-gray-400">
                                                     {order.customer_email || (order.user ? order.user.email : "No email")}
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                                                {order.created_at
+                                                    ? new Date(order.created_at).toLocaleDateString(undefined, {
+                                                          year: "numeric",
+                                                          month: "short",
+                                                          day: "numeric",
+                                                      })
+                                                    : "N/A"}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="font-black text-gray-900">

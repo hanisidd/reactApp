@@ -74,14 +74,16 @@ function StoreNavbar({ publicSettings, categories: propCategories, onSelectCateg
                         </button>
                         {catDropdown && (
                             <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
-                                <button onClick={() => handleCategoryClick(null)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50">
+                                <button onClick={() => handleCategoryClick(null)} className="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 border-b border-gray-100 mb-1">
                                     All Categories
                                 </button>
-                                {categories.map((cat) => (
-                                    <button key={cat.id} onClick={() => handleCategoryClick(cat.id)} className="w-full text-left px-4 py-2 text-xs text-gray-600 hover:bg-gray-50">
-                                        {cat.name}
-                                    </button>
-                                ))}
+                                <div className="max-h-64 overflow-y-auto">
+                                    {categories.map((cat) => (
+                                        <button key={cat.id} onClick={() => handleCategoryClick(cat.id)} className="w-full text-left px-4 py-2 text-xs text-gray-600 hover:bg-gray-50">
+                                            {cat.name}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>

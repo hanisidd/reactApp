@@ -90,3 +90,19 @@ export const updateUserProfileApi = async (formData) => {
     if (!res.ok) throw data;
     return data;
 };
+export const initiatePaymentApi = async (orderId) => {
+    const res = await fetch(`${BASE_URL}/payments/${orderId}/initiate`, {
+        method: "POST",
+        headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw data;
+    return data;
+};
+export const verifyPaymentApi = async (gateway, params) => {
+    const qs = new URLSearchParams(params).toString();
+    const res = await fetch(`${BASE_URL}/payments/${gateway}/verify?${qs}`, { headers: getHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw data;
+    return data;
+};
