@@ -9,6 +9,8 @@ function ContactMessages() {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedMsg, setSelectedMsg] = useState(null);
+    const [updatingId, setUpdatingId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
 
     useEffect(() => {
         fetchMessages();
@@ -33,20 +35,28 @@ function ContactMessages() {
     };
 
     const handleToggleRead = async (msg) => {
+        if (updatingId === msg.id) return; // prevent duplicate clicks
+
         try {
+            setUpdatingId(msg.id);
             const res = await fetch(`${BASE_URL}/${msg.id}/toggle-read`, {
                 method: "PATCH",
                 headers: getHeaders(),
             });
             const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Could not update status");
             setMessages((prev) => prev.map((m) => (m.id === msg.id ? data.contact_message : m)));
             toast.success(data.message);
         } catch (err) {
-            toast.error("Could not update status");
+            toast.error(err.message || "Could not update status");
+        } finally {
+            setUpdatingId(null);
         }
     };
 
     const handleDelete = async (msg) => {
+        if (deletingId === msg.id) return;
+
         const result = await Swal.fire({
             title: "Delete Message?",
             text: `Delete message from "${msg.name}"?`,
@@ -59,11 +69,18 @@ function ContactMessages() {
         if (!result.isConfirmed) return;
 
         try {
-            await fetch(`${BASE_URL}/${msg.id}`, { method: "DELETE", headers: getHeaders() });
+            setDeletingId(msg.id);
+            const res = await fetch(`${BASE_URL}/${msg.id}`, { method: "DELETE", headers: getHeaders() });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || "Could not delete message");
+            }
             setMessages((prev) => prev.filter((m) => m.id !== msg.id));
             toast.success("Message deleted");
         } catch (err) {
-            toast.error("Could not delete message");
+            toast.error(err.message || "Could not delete message");
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -93,34 +110,43 @@ function ContactMessages() {
                                 <td colSpan="5" className="p-6 text-center text-gray-400">No contact messages received yet.</td>
                             </tr>
                         ) : (
-                            messages.map((msg) => (
-                                <tr key={msg.id} className={`hover:bg-gray-50 ${msg.status === "unread" ? "bg-blue-50/30 font-semibold" : ""}`}>
-                                    <td className="p-4">
-                                        <div className="text-gray-900">{msg.name}</div>
-                                        <div className="text-xs text-gray-400 font-normal">{msg.email}</div>
-                                    </td>
-                                    <td className="p-4 text-gray-800 max-w-xs truncate">{msg.subject}</td>
-                                    <td className="p-4 text-xs text-gray-500">{new Date(msg.created_at).toLocaleDateString()}</td>
-                                    <td className="p-4">
-                                        <button
-                                            onClick={() => handleToggleRead(msg)}
-                                            className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
-                                                msg.status === "unread" ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-gray-600"
-                                            }`}
-                                        >
-                                            {msg.status}
-                                        </button>
-                                    </td>
-                                    <td className="p-4 text-right space-x-3">
-                                        <button onClick={() => setSelectedMsg(msg)} className="text-blue-600 hover:text-blue-800 font-medium text-xs">
-                                            View
-                                        </button>
-                                        <button onClick={() => handleDelete(msg)} className="text-red-600 hover:text-red-800 font-medium text-xs">
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
+                            messages.map((msg) => {
+                                const isUpdating = updatingId === msg.id;
+                                const isDeleting = deletingId === msg.id;
+                                return (
+                                    <tr key={msg.id} className={`hover:bg-gray-50 ${msg.status === "unread" ? "bg-blue-50/30 font-semibold" : ""}`}>
+                                        <td className="p-4">
+                                            <div className="text-gray-900">{msg.name}</div>
+                                            <div className="text-xs text-gray-400 font-normal">{msg.email}</div>
+                                        </td>
+                                        <td className="p-4 text-gray-800 max-w-xs truncate">{msg.subject}</td>
+                                        <td className="p-4 text-xs text-gray-500">{new Date(msg.created_at).toLocaleDateString()}</td>
+                                        <td className="p-4">
+                                            <button
+                                                onClick={() => handleToggleRead(msg)}
+                                                disabled={isUpdating}
+                                                className={`px-2.5 py-1 rounded-full text-xs font-bold capitalize transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                    msg.status === "unread" ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-gray-600"
+                                                }`}
+                                            >
+                                                {isUpdating ? "Updating..." : msg.status}
+                                            </button>
+                                        </td>
+                                        <td className="p-4 text-right space-x-3">
+                                            <button onClick={() => setSelectedMsg(msg)} className="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                                                View
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(msg)}
+                                                disabled={isDeleting}
+                                                className="text-red-600 hover:text-red-800 font-medium text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {isDeleting ? "Deleting..." : "Delete"}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

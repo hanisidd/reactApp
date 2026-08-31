@@ -17,7 +17,7 @@ function Orders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
-    const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [updatingOrderId, setUpdatingOrderId] = useState(null);
     const [sendingEmailId, setSendingEmailId] = useState(null);
 
     const {
@@ -60,8 +60,11 @@ function Orders() {
     };
 
     const handleStatusUpdate = async (orderId, newStatus) => {
+        // Guard against duplicate/overlapping requests for the same order
+        if (updatingOrderId === orderId) return;
+
         try {
-            setUpdatingStatus(true);
+            setUpdatingOrderId(orderId);
             const token = localStorage.getItem("admin_token");
             const res = await fetch(`http://localhost:8000/api/admin/orders/${orderId}/status`, {
                 method: "PATCH",
@@ -74,7 +77,7 @@ function Orders() {
             });
             const data = await res.json();
             if (res.ok) {
-                toast.success(`Order #${orderId} set to "${newStatus}" & email sent!`);
+                toast.success(data.message || `Order #${orderId} set to "${newStatus}".`);
                 setOrders((prev) =>
                     prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
                 );
@@ -87,7 +90,7 @@ function Orders() {
         } catch (err) {
             toast.error("Error updating order status");
         } finally {
-            setUpdatingStatus(false);
+            setUpdatingOrderId(null);
         }
     };
 
@@ -248,9 +251,9 @@ function Orders() {
                                             <td className="px-6 py-4">
                                                 <select
                                                     value={order.status || "pending"}
-                                                    disabled={updatingStatus}
+                                                    disabled={updatingOrderId === order.id}
                                                     onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                                                    className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 text-gray-800 font-bold text-xs rounded-xl focus:ring-2 focus:ring-blue-500"
+                                                    className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 text-gray-800 font-bold text-xs rounded-xl focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                                                 >
                                                     <option value="pending">Pending</option>
                                                     <option value="confirmed">Confirmed</option>
@@ -459,27 +462,34 @@ function Orders() {
                                 <EnvelopeIcon className="w-4 h-4 text-blue-600" />
                                 Updating triggers direct customer status emails
                             </span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <button
-                                    disabled={updatingStatus}
+                                    disabled={updatingOrderId === selectedOrder.id}
                                     onClick={() => handleStatusUpdate(selectedOrder.id, "cancelled")}
-                                    className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl transition"
+                                    className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl transition disabled:opacity-50"
                                 >
-                                    Cancel Order
+                                    {updatingOrderId === selectedOrder.id ? "..." : "Cancel Order"}
                                 </button>
                                 <button
-                                    disabled={updatingStatus}
+                                    disabled={updatingOrderId === selectedOrder.id}
+                                    onClick={() => handleStatusUpdate(selectedOrder.id, "confirmed")}
+                                    className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl transition disabled:opacity-50"
+                                >
+                                    {updatingOrderId === selectedOrder.id ? "..." : "Order Received"}
+                                </button>
+                                <button
+                                    disabled={updatingOrderId === selectedOrder.id}
                                     onClick={() => handleStatusUpdate(selectedOrder.id, "preparing")}
-                                    className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-xl transition"
+                                    className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs rounded-xl transition disabled:opacity-50"
                                 >
-                                    Set Preparing
+                                    {updatingOrderId === selectedOrder.id ? "..." : "Set Preparing"}
                                 </button>
                                 <button
-                                    disabled={updatingStatus}
+                                    disabled={updatingOrderId === selectedOrder.id}
                                     onClick={() => handleStatusUpdate(selectedOrder.id, "delivered")}
-                                    className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm"
+                                    className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm disabled:opacity-50"
                                 >
-                                    Mark Delivered
+                                    {updatingOrderId === selectedOrder.id ? "..." : "Mark Delivered"}
                                 </button>
                             </div>
                         </div>

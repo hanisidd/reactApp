@@ -9,6 +9,7 @@ import Swal from "sweetalert2";
 function Users() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [updatingUserId, setUpdatingUserId] = useState(null);
 
     // DataTable Hook
     const {
@@ -40,6 +41,9 @@ function Users() {
     };
 
     const handleToggleStatus = async (user) => {
+        // Prevent duplicate/overlapping requests for the same user
+        if (updatingUserId === user.id) return;
+
         const isBlocking = user.status === "active";
         const actionText = isBlocking ? "Block" : "Activate";
 
@@ -57,6 +61,7 @@ function Users() {
         if (!result.isConfirmed) return;
 
         try {
+            setUpdatingUserId(user.id);
             const data = await toggleUserStatusApi(user.id);
             setUsers((prevUsers) =>
                 prevUsers.map((u) => (u.id === user.id ? data.user : u))
@@ -64,6 +69,8 @@ function Users() {
             toast.success(data.message);
         } catch (err) {
             toast.error(err.message || "Could not update status");
+        } finally {
+            setUpdatingUserId(null);
         }
     };
 
@@ -134,37 +141,45 @@ function Users() {
                                 </td>
                             </tr>
                         ) : (
-                            paginatedData.map((user) => (
-                                <tr key={user.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
-                                    <td className="px-6 py-4 text-gray-600">{user.email}</td>
-                                    <td className="px-6 py-4 text-gray-600">{user.phone || "N/A"}</td>
-                                    <td className="px-6 py-4 text-gray-600">{user.address || "N/A"}</td>
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                                                user.status === "active"
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-red-100 text-red-800"
-                                            }`}
-                                        >
-                                            {user.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => handleToggleStatus(user)}
-                                            className={`px-3 py-1 text-xs font-medium rounded transition ${
-                                                user.status === "active"
-                                                    ? "bg-red-50 text-red-600 hover:bg-red-100"
-                                                    : "bg-green-50 text-green-600 hover:bg-green-100"
-                                            }`}
-                                        >
-                                            {user.status === "active" ? "Block" : "Activate"}
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
+                            paginatedData.map((user) => {
+                                const isUpdating = updatingUserId === user.id;
+                                return (
+                                    <tr key={user.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
+                                        <td className="px-6 py-4 text-gray-600">{user.email}</td>
+                                        <td className="px-6 py-4 text-gray-600">{user.phone || "N/A"}</td>
+                                        <td className="px-6 py-4 text-gray-600">{user.address || "N/A"}</td>
+                                        <td className="px-6 py-4">
+                                            <span
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                                                    user.status === "active"
+                                                        ? "bg-green-100 text-green-800"
+                                                        : "bg-red-100 text-red-800"
+                                                }`}
+                                            >
+                                                {user.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => handleToggleStatus(user)}
+                                                disabled={isUpdating}
+                                                className={`px-3 py-1 text-xs font-medium rounded transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                                                    user.status === "active"
+                                                        ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                                        : "bg-green-50 text-green-600 hover:bg-green-100"
+                                                }`}
+                                            >
+                                                {isUpdating
+                                                    ? "Updating..."
+                                                    : user.status === "active"
+                                                    ? "Block"
+                                                    : "Activate"}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

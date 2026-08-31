@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Select from "react-select";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -13,22 +13,23 @@ import {
     deleteProductApi,
 } from "../services/products";
 import { getCategoriesApi } from "../services/categories";
-import { useDataTable } from "../hooks/useDataTable";
+import { useServerTable } from "../hooks/useServerTable";
 import Pagination from "../components/Pagination";
 import Loader from "../components/Loader";
 
 function Products() {
-    const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [viewingProduct, setViewingProduct] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [togglingId, setTogglingId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
 
     const [form, setForm] = useState({
-        type: "digital", // Default to digital
+        type: "digital",
         category_id: "",
         title: "",
         description: "",
@@ -43,7 +44,24 @@ function Products() {
 
     const dragItem = useRef(null);
 
-    // DataTable Hook
+    // Server-side fetch: page/search/sort are all resolved on the backend
+    // now, since product counts can grow into the thousands.
+    const fetchPage = useCallback(async ({ page, perPage, search, sortBy, sortDir }) => {
+        const res = await getProductsApi({
+            page,
+            perPage,
+            search,
+            sortBy: sortBy || "created_at",
+            sortDir: sortDir || "desc",
+        });
+        return {
+            data: res.data || [],
+            currentPage: res.current_page || 1,
+            totalPages: res.last_page || 1,
+            totalItems: res.total || 0,
+        };
+    }, []);
+
     const {
         search,
         setSearch,
@@ -53,26 +71,24 @@ function Products() {
         setCurrentPage,
         totalPages,
         totalItems,
-        paginatedData,
-    } = useDataTable(products, ["title", "type", "price", "status", "file_original_name"], 5);
+        paginatedData: products,
+        loading,
+        refetch,
+    } = useServerTable(fetchPage, { perPage: 10, initialSortKey: "created_at" });
 
     useEffect(() => {
-        fetchInitialData();
+        fetchCategories();
     }, []);
 
-    const fetchInitialData = async () => {
+    const fetchCategories = async () => {
         try {
-            setLoading(true);
-            const [productRes, categoryRes] = await Promise.all([
-                getProductsApi(),
-                getCategoriesApi(),
-            ]);
-            setProducts(productRes.products);
-            setCategories(categoryRes.categories);
+            setCategoriesLoading(true);
+            const data = await getCategoriesApi();
+            setCategories(data.categories);
         } catch (err) {
-            toast.error(err.message || "Failed to load data");
+            toast.error(err.message || "Failed to load categories");
         } finally {
-            setLoading(false);
+            setCategoriesLoading(false);
         }
     };
 
@@ -250,22 +266,18 @@ function Products() {
 
         try {
             setSaving(true);
-            let data;
             if (editingProduct) {
-                data = await updateProductApi(editingProduct.id, formData);
-                setProducts((prev) =>
-                    prev.map((p) => (p.id === editingProduct.id ? data.product : p))
-                );
+                await updateProductApi(editingProduct.id, formData);
                 toast.success("Product updated successfully");
             } else {
-                data = await createProductApi(formData);
-                setProducts((prev) => [data.product, ...prev]);
+                await createProductApi(formData);
                 toast.success("Product created successfully");
             }
             closeModal();
+            refetch();
         } catch (err) {
-            if (err?.errors) {
-                setErrors(err.errors);
+            if (err?.data?.errors) {
+                setErrors(err.data.errors);
             } else {
                 toast.error(err?.message || "Operation failed");
             }
@@ -275,18 +287,22 @@ function Products() {
     };
 
     const handleToggleStatus = async (product) => {
+        if (togglingId === product.id) return; // prevent duplicate clicks
         try {
+            setTogglingId(product.id);
             const data = await toggleProductStatusApi(product.id);
-            setProducts((prev) =>
-                prev.map((p) => (p.id === product.id ? data.product : p))
-            );
             toast.success(data.message);
+            refetch();
         } catch (err) {
             toast.error(err.message || "Failed to update status");
+        } finally {
+            setTogglingId(null);
         }
     };
 
     const handleDelete = async (product) => {
+        if (deletingId === product.id) return;
+
         const result = await Swal.fire({
             title: "Delete Product?",
             text: `Are you sure you want to delete "${product.title}"?`,
@@ -301,15 +317,18 @@ function Products() {
         if (!result.isConfirmed) return;
 
         try {
+            setDeletingId(product.id);
             await deleteProductApi(product.id);
-            setProducts((prev) => prev.filter((p) => p.id !== product.id));
             toast.success("Product deleted successfully");
+            refetch();
         } catch (err) {
             toast.error(err.message || "Could not delete product");
+        } finally {
+            setDeletingId(null);
         }
     };
 
-    if (loading) return <Loader />;
+    if (categoriesLoading && loading) return <Loader />;
 
     return (
         <div className="p-6">
@@ -337,7 +356,12 @@ function Products() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden relative">
+                {loading && (
+                    <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 text-xs font-semibold text-gray-500">
+                        Loading...
+                    </div>
+                )}
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
@@ -372,15 +396,17 @@ function Products() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 text-sm">
-                        {paginatedData.length === 0 ? (
+                        {products.length === 0 ? (
                             <tr>
                                 <td colSpan="8" className="text-center py-6 text-gray-500">
                                     No matching products found.
                                 </td>
                             </tr>
                         ) : (
-                            paginatedData.map((product) => {
+                            products.map((product) => {
                                 const cover = product.images?.find((img) => img.is_cover) || product.images?.[0];
+                                const isToggling = togglingId === product.id;
+                                const isDeleting = deletingId === product.id;
                                 return (
                                     <tr key={product.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">
@@ -423,13 +449,14 @@ function Products() {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={() => handleToggleStatus(product)}
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize cursor-pointer transition ${
+                                                disabled={isToggling}
+                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize cursor-pointer transition disabled:opacity-50 disabled:cursor-not-allowed ${
                                                     product.status === "active"
                                                         ? "bg-green-100 text-green-800 hover:bg-green-200"
                                                         : "bg-red-100 text-red-800 hover:bg-red-200"
                                                 }`}
                                             >
-                                                {product.status}
+                                                {isToggling ? "Updating..." : product.status}
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-gray-600 text-xs">
@@ -463,9 +490,10 @@ function Products() {
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(product)}
-                                                className="text-red-600 hover:text-red-800 font-medium text-sm"
+                                                disabled={isDeleting}
+                                                className="text-red-600 hover:text-red-800 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                Delete
+                                                {isDeleting ? "Deleting..." : "Delete"}
                                             </button>
                                         </td>
                                     </tr>
@@ -479,7 +507,7 @@ function Products() {
                     totalPages={totalPages}
                     onPageChange={setCurrentPage}
                     totalItems={totalItems}
-                    itemsPerPage={5}
+                    itemsPerPage={10}
                 />
             </div>
 
@@ -535,7 +563,6 @@ function Products() {
                             </div>
                         </div>
 
-                        {/* Digital Product Download Box - Only if Digital */}
                         {viewingProduct.type === "digital" && (
                             <div className="bg-blue-50/60 border border-blue-100 p-4 rounded-lg mb-5 flex items-center justify-between">
                                 <div>
@@ -618,7 +645,6 @@ function Products() {
                             </button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-5">
-                            {/* Product Type Switcher */}
                             <div>
                                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                                     Product Type
@@ -649,7 +675,6 @@ function Products() {
                                 </div>
                             </div>
 
-                            {/* Digital File Selection - Only when Type is Digital */}
                             {form.type === "digital" && (
                                 <div className="bg-purple-50/50 p-4 border border-purple-100 rounded-lg">
                                     <label className="block text-sm font-semibold text-gray-800 mb-1">
@@ -681,7 +706,6 @@ function Products() {
                                 </div>
                             )}
 
-                            {/* Category Select */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                                 <Select
@@ -698,7 +722,6 @@ function Products() {
                                 {errors.category_id && <p className="text-red-500 text-xs mt-1">{errors.category_id[0] || errors.category_id}</p>}
                             </div>
 
-                            {/* Title */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Title</label>
                                 <input
@@ -711,7 +734,6 @@ function Products() {
                                 {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title[0] || errors.title}</p>}
                             </div>
 
-                            {/* Description */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                                 <div className="bg-white border border-gray-300 rounded-md overflow-hidden">
@@ -724,7 +746,6 @@ function Products() {
                                 </div>
                             </div>
 
-                            {/* Price & Quantity */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
@@ -753,7 +774,6 @@ function Products() {
                                 </div>
                             </div>
 
-                            {/* Product Preview Images */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
                                     <label className="block text-sm font-medium text-gray-700">Product Preview Images (Up to 15)</label>
@@ -803,7 +823,6 @@ function Products() {
                                 )}
                             </div>
 
-                            {/* Action Buttons */}
                             <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 sticky bottom-0 bg-white py-2">
                                 <button
                                     type="button"

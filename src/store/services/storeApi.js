@@ -10,7 +10,7 @@ const getHeaders = () => {
 };
 
 export const fetchStoreProductsApi = async (categoryId = null) => {
-    const url = categoryId ? `${BASE_URL}/store/products?category_id=${categoryId}` : `${BASE_URL}/store/products`;
+    const url = categoryId ? `${BASE_URL}/products?category_id=${categoryId}` : `${BASE_URL}/products`;
     const res = await fetch(url, { headers: getHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to fetch products");
@@ -18,21 +18,21 @@ export const fetchStoreProductsApi = async (categoryId = null) => {
 };
 
 export const fetchStoreCategoriesApi = async () => {
-    const res = await fetch(`${BASE_URL}/store/categories`, { headers: getHeaders() });
+    const res = await fetch(`${BASE_URL}/categories`, { headers: getHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to fetch categories");
     return data.categories;
 };
 
 export const fetchCheckoutSettingsApi = async () => {
-    const res = await fetch(`${BASE_URL}/store/checkout-settings`, { headers: getHeaders() });
+    const res = await fetch(`${BASE_URL}/checkout-settings`, { headers: getHeaders() });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to fetch settings");
     return data;
 };
 
 export const validatePromoCodeApi = async (code) => {
-    const res = await fetch(`${BASE_URL}/store/promo/validate`, {
+    const res = await fetch(`${BASE_URL}/promo/validate`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({ code }),
@@ -43,7 +43,7 @@ export const validatePromoCodeApi = async (code) => {
 };
 
 export const submitCheckoutApi = async (payload) => {
-    const res = await fetch(`${BASE_URL}/store/checkout`, {
+    const res = await fetch(`${BASE_URL}/checkout`, {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(payload),

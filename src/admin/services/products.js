@@ -1,62 +1,28 @@
-const BASE_URL = "http://localhost:8000/api/admin/products";
+import { apiFetch, buildQueryString } from "./apiClient";
 
-const getHeaders = () => {
-    const token = localStorage.getItem("admin_token");
-    return {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json",
-    };
-};
-
-export const getProductsApi = async () => {
-    const response = await fetch(BASE_URL, {
-        headers: getHeaders(),
+export const getProductsApi = async ({ page, perPage, search, sortBy, sortDir, type, status } = {}) => {
+    const qs = buildQueryString({
+        page,
+        per_page: perPage,
+        search,
+        sort_by: sortBy,
+        sort_dir: sortDir,
+        type,
+        status,
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Failed to fetch products");
-    return data;
+    return apiFetch(`/products${qs}`);
 };
 
-export const createProductApi = async (formData) => {
-    const response = await fetch(BASE_URL, {
-        method: "POST",
-        headers: getHeaders(),
-        body: formData, // FormData automatically handles multipart/form-data
-    });
-    const data = await response.json();
-    if (!response.ok) throw data;
-    return data;
-};
+export const createProductApi = (formData) =>
+    apiFetch("/products", { method: "POST", body: formData, isFormData: true });
 
-export const updateProductApi = async (id, formData) => {
-    // Note: We use POST with _method=PUT for Laravel file uploads on update
+export const updateProductApi = (id, formData) => {
     formData.append("_method", "PUT");
-    const response = await fetch(`${BASE_URL}/${id}`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: formData,
-    });
-    const data = await response.json();
-    if (!response.ok) throw data;
-    return data;
+    return apiFetch(`/products/${id}`, { method: "POST", body: formData, isFormData: true });
 };
 
-export const toggleProductStatusApi = async (id) => {
-    const response = await fetch(`${BASE_URL}/${id}/toggle-status`, {
-        method: "PATCH",
-        headers: getHeaders(),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Failed to update status");
-    return data;
-};
+export const toggleProductStatusApi = (id) =>
+    apiFetch(`/products/${id}/toggle-status`, { method: "PATCH" });
 
-export const deleteProductApi = async (id) => {
-    const response = await fetch(`${BASE_URL}/${id}`, {
-        method: "DELETE",
-        headers: getHeaders(),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Failed to delete product");
-    return data;
-};
+export const deleteProductApi = (id) =>
+    apiFetch(`/products/${id}`, { method: "DELETE" });
